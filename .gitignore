@@ -133,3 +133,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Sensor database
+*/sensor_database_detailed.csv
