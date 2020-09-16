@@ -12,7 +12,9 @@ from AssistanceTransform.exceptions import DimensionError, MissingExifError
 
 def test_transform_image():
     """Function composition for transforming image-coordinates to real-world coordinates
-    using the other functions declared in transform.py."""
+    using the other functions declared in transform.py.
+    
+    Transformation of images is non-deterministic due to Metropolis Monte Carlo sampling"""
     assert False
 
 
@@ -22,7 +24,7 @@ def test_get_Exif(monkeypatch):
     with monkeypatch.context() as m:
         img = Image.new("RGB", (30, 30), color="red")
         m.setattr(img, "getexif", {37386: 0.6, 41486: 15, 41487: 7.5})
-        assert transform.getExif(img) == (0.6, (30, 30), (50.8, 101.6))
+        assert transform.get_Exif(img) == (0.6, (30, 30), (50.8, 101.6))
 
     # Fake the Image object and Exif data, crop factor
     with monkeypatch.context() as m:
@@ -30,7 +32,7 @@ def test_get_Exif(monkeypatch):
         m.setattr(img, "getexif", {37386: 4, 41989: 8})
         assert transform.getExif(img) == (0.6, (30, 30), (18, 12))
 
-    # Missing both actual focal length
+    # Missing actual focal length
     with monkeypatch.context() as m:
         img = Image.new("RGB", (30, 30), color='red')
         m.setattr(img, "getexif", {41486: 15, 41487: 7.5})
@@ -187,4 +189,14 @@ def test_sensor_size_resolution():
 
 def test_sensor_size_crop_factor():
     """Estimates sensor size based on effective and actual focal length, comparing to a standard 35 mm film camera."""
-    assert False
+    assert transform.sensor_size_crop_factor(8, 4) == (18, 12)
+
+    # Effective focal length may not equal 0
+    with pytest.raises(ZeroDivisionError) as excinfo:
+        transform.sensor_size_crop_factor(0, 1)
+    assert "Effective" in str(excinfo)
+
+    # Actual focal length may not equal 0
+    with pytest.raises(ZeroDivisionError) as excinfo:
+        transform.sensor_size_crop_factor(1, 0)
+    assert "Actual" in str(excinfo)
