@@ -4,7 +4,7 @@ import cameratransform as ct
 import numpy as np
 from PIL import Image
 
-from AssistanceTransform.exceptions import MissingExifError
+from AssistanceTransform.exceptions import MissingExifError, DimensionError
 
 
 def transform_image(img: Image.Image, reference: Tuple[np.ndarray, np.ndarray], height: np.ndarray, STD: int, image_coords: np.ndarray,
@@ -50,6 +50,9 @@ def get_Exif(img: Image.Image) -> Tuple[float, Tuple[int, int], Tuple[float, flo
         raise MissingExifError("Actual Focal Length not found in exif")
 
     img_size = img.size
+    # Image dimensions must 1x1 or greater
+    if img_size[0] < 1 or img_size[1] < 1:
+        raise DimensionError(f"Dimensions must be greater than 0, not {img_size}")
 
     resolution = exif_data.get(41486), exif_data.get(41487)
     if resolution[0] is not None and resolution[1] is not None:
@@ -75,7 +78,20 @@ def sensor_size_resolution(resolution: Tuple, image_size: Tuple[int, int]) -> Tu
     :return: Sensor size
     :rtype: Tuple[float, float]
     """
-    pass
+    # `resolution` and `image_size` must be of type tuple
+    if not isinstance(resolution, tuple):
+        raise TypeError("Expected `resolution` as tuple(float, float)")
+    if not isinstance(image_size, tuple):
+        raise TypeError("Expected `image_size` as tuple(float, float)")
+
+    if resolution[0] == 0:
+        raise ZeroDivisionError("FocalPlaneXResolution must be greater than 0")
+    if resolution[1] == 0:
+        raise ZeroDivisionError("FocalPlaneYResolution must be greater than 0")
+
+    sensor_size = (image_size[0] / resolution[0] * 25.4,
+                   image_size[1] / resolution[1] * 25.4)
+    return sensor_size
 
 
 def sensor_size_crop_factor(effective_f: float, actual_f: float) -> Tuple[float, float]:
