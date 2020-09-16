@@ -1,4 +1,4 @@
-from datetime.datetime import datetime
+import datetime as dt
 from typing import List
 
 import numpy as np
@@ -15,7 +15,7 @@ def area(poly: np.ndarray) -> float:
     pass
 
 
-def estimate_release_rate(polys: List[np.ndarray], time_indices: List[datetime]) -> float:
+def estimate_release_rate(polys: List[np.ndarray], time_indices: List[dt.datetime]) -> float:
     """Estimates release rate of fluid based on size of fluid spill at `n` different time indices.
 
     :param polys: List of polygons describing fluid spill
