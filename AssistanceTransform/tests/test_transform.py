@@ -46,6 +46,21 @@ def test_get_Exif(monkeypatch):
             transform.get_Exif(img)
         assert "FocalPlane(X/Y)Resolution and effective focal length" in str(excinfo)
 
+    # Incorrect type for img - str
+    with pytest.raises(TypeError) as excinfo:
+        transform.get_Exif("str")
+    assert "Expected PIL.Image.Image" in str(excinfo)
+
+    # Incorrect type for img - int
+    with pytest.raises(TypeError) as excinfo:
+        transform.get_Exif(0)
+    assert "Expected PIL.Image.Image" in str(excinfo)
+
+    # Incorrect type for img - dict
+    with pytest.raises(TypeError) as excinfo:
+        transform.get_Exif({"img": True})
+    assert "Expected PIL.Image.Image" in str(excinfo)
+
     # Incorrect type for actual focal length - str
     with monkeypatch.context() as m:
         img = Image.new("RGB", (30, 30), color='red')
