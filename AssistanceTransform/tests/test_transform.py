@@ -7,7 +7,7 @@ from PIL import Image
 from PIL.ExifTags import TAGS
 
 from AssistanceTransform import transform
-from AssistanceTransform.exceptions import MissingExifError
+from AssistanceTransform.exceptions import DimensionError, MissingExifError
 
 
 def test_transform_image():
@@ -18,9 +18,9 @@ def test_transform_image():
 
 def test_get_Exif(monkeypatch):
     """Extracts or estimates image meta data for Camera intrinsic properties."""
-    # Fake the Image object and Exif data, FocalPlaneResolution
+    # Fake the Image object and Exif data, FocalPlaneimage_size
     with monkeypatch.context() as m:
-        img = Image.new("RGB", (30, 30), color='red')
+        img = Image.new("RGB", (30, 30), color="red")
         m.setattr(img, "getexif", {37386: 0.6, 41486: 15, 41487: 7.5})
         assert transform.getExif(img) == (0.6, (30, 30), (50.8, 101.6))
 
@@ -29,7 +29,7 @@ def test_get_Exif(monkeypatch):
         img = Image.new("RGB", (30, 30), color='red')
         m.setattr(img, "getexif", {37386: 4, 41989: 8})
         assert transform.getExif(img) == (0.6, (30, 30), (18, 12))
-        
+
     # Missing both actual focal length
     with monkeypatch.context() as m:
         img = Image.new("RGB", (30, 30), color='red')
@@ -45,6 +45,18 @@ def test_get_Exif(monkeypatch):
         with pytest.raises(MissingExifError) as excinfo:
             transform.get_Exif(img)
         assert "FocalPlane(X/Y)Resolution and effective focal length" in str(excinfo)
+
+    # Check image size - (2D)
+    img = Image.new("RGB", (30, 30), color="red")
+    with pytest.raises(DimensionError) as excinfo:
+        transform.get_Exif(img)
+    assert "Expected two image dimensions" in str(excinfo)
+
+    # Check image size - each image dimension must be size 1 or greater
+    img = Image.new("RGB", (0, 0), color="red")
+    with pytest.raises(DimensionError) as excinfo:
+        transform.get_Exif(img)
+    assert "Dimensions must be greater than 0" in str(excinfo)
 
     # Incorrect type for img - str
     with pytest.raises(TypeError) as excinfo:
@@ -129,7 +141,48 @@ def test_get_Exif(monkeypatch):
 def test_sensor_size_resolution():
     """Estimates sensor size based on FocalPlaneXResolution and FocalPlaneYResolution and image size.
     Based on CameraTransform's sensor size estimation."""
-    assert False
+    assert transform.sensor_size_resolution(
+        (15, 7.5), (30, 30)) == (50.8, 101.6)
+
+    # FocalPlaneXResolution equals 0
+    with pytest.raises(ZeroDivisionError) as excinfo:
+        transform.sensor_size_resolution((0, 1), (1, 1))
+    assert "FocalPlaneXResolution must be greater than 0" in str(excinfo)
+
+    # FocalPlaneYResolution equals 0
+    with pytest.raises(ZeroDivisionError) as excinfo:
+        transform.sensor_size_resolution((1, 0), (1, 1))
+    assert "FocalPlaneYResolution must be greater than 0"
+
+    # Incorrect type for resolution - str
+    with pytest.raises(TypeError) as excinfo:
+        transform.sensor_size_resolution("str", (0, 0))
+    assert "Expected `resolution` as tuple(float, float)" in str(excinfo)
+
+    # Incorrect type for resolution - list
+    with pytest.raises(TypeError) as excinfo:
+        transform.sensor_size_resolution([1, 2], (0, 0))
+    assert "Expected `resolution` as tuple(float, float)" in str(excinfo)
+
+    # Incorrect type for resolution - int
+    with pytest.raises(TypeError) as excinfo:
+        transform.sensor_size_resolution(0, (0, 0))
+    assert "Expected `resolution` as tuple(float, float)" in str(excinfo)
+
+    # Incorrect type for image_size - str
+    with pytest.raises(TypeError) as excinfo:
+        transform.sensor_size_resolution((0, 0), "str")
+    assert "Expected `image_size` as tuple(float, float)" in str(excinfo)
+
+    # Incorrect type for image_size - list
+    with pytest.raises(TypeError) as excinfo:
+        transform.sensor_size_resolution((0, 0), [1, 2])
+    assert "Expected `image_size` as tuple(float, float)" in str(excinfo)
+
+    # Incorrect type for image_size - int
+    with pytest.raises(TypeError) as excinfo:
+        transform.sensor_size_resolution((0, 0), 0)
+    assert "Expected `image_size` as tuple(float, float)" in str(excinfo)
 
 
 def test_sensor_size_crop_factor():
