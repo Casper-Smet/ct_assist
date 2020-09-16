@@ -1,15 +1,15 @@
-from typing import Tuple
 from numbers import Rational
+from typing import Tuple
 
 import cameratransform as ct
 import numpy as np
 from PIL import Image
 
-from AssistanceTransform.exceptions import MissingExifError, DimensionError
+from AssistanceTransform.exceptions import DimensionError, MissingExifError
 
 
 def transform_image(img: Image.Image, reference: Tuple[np.ndarray, np.ndarray], height: np.ndarray, STD: int, image_coords: np.ndarray,
-                    meta_data: dict = None, z: float = 0.0, *args, **kwargs) -> np.ndarray:
+                    meta_data: dict = None, z: float = 0.0, iters=1e5, *args, **kwargs) -> np.ndarray:
     """Function composition for transforming image-coordinates to real-world coordinates
     using the other functions declared in transform.py.
 
@@ -27,7 +27,48 @@ def transform_image(img: Image.Image, reference: Tuple[np.ndarray, np.ndarray], 
     :return: image_coords transformed to real-world coordinates
     :rtype: np.ndarray
     """
-    pass
+    # Check if img is PIL.Image.Image
+    if not isinstance(img, Image.Image):
+        raise TypeError(f"Expected `img` to be PIL.Image.Image, not {type(img)}")
+
+    # TODO: Check contents of tuple
+    # Check if reference is a tuple
+    if not isinstance(reference, tuple):
+        raise TypeError(f"Expected `reference` to be tuple(np.ndarray, np.ndarray), not {type(reference)}")
+    
+    # Check if height is int or float or np.ndarray
+    if not isinstance(height, (int, float, np.ndarray)):
+        raise TypeError(f"Expected `height` to be np.ndarray or float, not {type(height)}")
+
+    # Check if STD is int or float or np.ndarray
+    if not isinstance(STD, (int, float, np.ndarray)):
+        raise TypeError(f"Expected `STD` to be np.ndarray or float, not {type(STD)}")
+    
+    # Get Focal length, image size, sensor size from image meta data
+    f, image_size, sensor_size = get_Exif(img)
+    # Initialise projection
+    proj = ct.RectilinearProjection(focallength_mm=f,
+                                    sensor=sensor_size,
+                                    image=image_size)
+    # Initialise Camera
+    cam = ct.Camera(projection=proj)
+
+    # Add objects to Camera
+    cam.addObjectHeightInformation(
+        points_head=reference[0], points_feet=reference[1], height=height, variation=STD)
+
+    # Fit for all spatial parameters
+    trace = cam.metropolis([
+        ct.FitParameter("elevation_m", lower=0,
+                        upper=200, value=2),
+        ct.FitParameter("tilt_deg", lower=0, upper=180, value=80),
+        ct.FitParameter("heading_deg", lower=-180, upper=180, value=-77),
+        ct.FitParameter("roll_deg", lower=-180, upper=180, value=0)
+    ], iterations=iters)
+
+    real_pos = cam.spaceFromImage(points=image_coords, Z=z)
+
+    return real_pos
 
 
 def get_Exif(img: Image.Image) -> Tuple[float, Tuple[int, int], Tuple[float, float]]:
@@ -51,7 +92,8 @@ def get_Exif(img: Image.Image) -> Tuple[float, Tuple[int, int], Tuple[float, flo
     img_size = img.size
     # Image dimensions must 1x1 or greater
     if img_size[0] < 1 or img_size[1] < 1:
-        raise DimensionError(f"Dimensions must be greater than 0, not {img_size}")
+        raise DimensionError(
+            f"Dimensions must be greater than 0, not {img_size}")
 
     exif_data = img.getexif()
     f = exif_data.get(37386)
@@ -68,9 +110,11 @@ def get_Exif(img: Image.Image) -> Tuple[float, Tuple[int, int], Tuple[float, flo
     if resolution[0] is not None and resolution[1] is not None:
         # FocalPlaneResolutions must be float-like
         if not issubclass(type(resolution[0]), (Rational, float, int)):
-            raise TypeError(f"FocalPlaneXResolution must be float, not {type(resolution[0])}")
+            raise TypeError(
+                f"FocalPlaneXResolution must be float, not {type(resolution[0])}")
         if not issubclass(type(resolution[1]), (Rational, float, int)):
-            raise TypeError(f"FocalPlaneYResolution must be float, not {type(resolution[1])}")
+            raise TypeError(
+                f"FocalPlaneYResolution must be float, not {type(resolution[1])}")
         # FocalPlaneResolution most likely Rational, convert to float
         resolution = float(resolution[0]), float(resolution[1])
         sensor_size = sensor_size_resolution(resolution, img_size)
@@ -82,7 +126,8 @@ def get_Exif(img: Image.Image) -> Tuple[float, Tuple[int, int], Tuple[float, flo
                 "FocalPlane(X/Y)Resolution and effective focal length not found in exif")
         # Effective focal length must be float-like
         if not issubclass(type(effective_f), (Rational, float, int)):
-            raise TypeError(f"Effective focal length must be float, not {type(effective_f)}")
+            raise TypeError(
+                f"Effective focal length must be float, not {type(effective_f)}")
         # f is most likely Rational, convert to float
         effective_f = float(effective_f)
         sensor_size = sensor_size_crop_factor(effective_f, f)
