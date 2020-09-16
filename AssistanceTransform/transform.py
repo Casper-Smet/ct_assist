@@ -84,6 +84,7 @@ def sensor_size_resolution(resolution: Tuple, image_size: Tuple[int, int]) -> Tu
     if not isinstance(image_size, tuple):
         raise TypeError("Expected `image_size` as tuple(float, float)")
 
+    # `FocalPlaneXResolution` and `FocalPlaneYresolution` must be greater than 0
     if resolution[0] == 0:
         raise ZeroDivisionError("FocalPlaneXResolution must be greater than 0")
     if resolution[1] == 0:
@@ -104,4 +105,10 @@ def sensor_size_crop_factor(effective_f: float, actual_f: float) -> Tuple[float,
     :return: Sensor size
     :rtype: Tuple[float, float]
     """
-    pass
+    if effective_f == 0:
+        raise ZeroDivisionError("Effective focal length may not be 0")
+    if actual_f == 0:
+        raise ZeroDivisionError("Actual focal length may not be 0")
+    crop_factor = effective_f / actual_f
+    sensor_size = (36 / crop_factor, 24 / crop_factor)
+    return sensor_size
