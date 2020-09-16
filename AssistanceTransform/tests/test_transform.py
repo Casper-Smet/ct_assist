@@ -10,12 +10,49 @@ from AssistanceTransform import transform
 from AssistanceTransform.exceptions import DimensionError, MissingExifError
 
 
-def test_transform_image():
+def test_transform_image(monkeypatch):
     """Function composition for transforming image-coordinates to real-world coordinates
     using the other functions declared in transform.py.
-    
-    Transformation of images is non-deterministic due to Metropolis Monte Carlo sampling"""
-    assert False
+
+    Transformation of images is non-deterministic due to Metropolis Monte Carlo sampling,
+    accuracy will be tested seperately."""
+
+    type_mistakes = ["str", 0, [0, 1]]
+    with monkeypatch.context() as m:
+        img = Image.new("RGB", (30, 30), color="red")
+        m.setattr(img, "getexif", {37386: 0.6, 41486: 15, 41487: 7.5})
+
+        # Wrong type for image
+        for img_ in type_mistakes:
+            with pytest.raises(TypeError) as excinfo:
+                transform.transform_image(
+                    img_, (np.array([1]), np.array([1])), 1.0, 1)
+            assert "Expected `img` to be PIL.Image.Image" in str(excinfo)
+
+        # Wrong type for reference
+        for reference in type_mistakes:
+            with pytest.raises(TypeError) as excinfo:
+                transform.transform_image(
+                    img, reference, 1.0, 1)
+            assert "Expected `reference` to be tuple(np.ndarray, np.ndarray)" in str(excinfo)
+
+        # Wrong type for height
+        for height in type_mistakes:
+            if height == 0:
+                pass
+            with pytest.raises(TypeError) as excinfo:
+                transform.transform_image(
+                    img, (np.array([1]), np.array([1])), height, 1)
+            assert "Expected `height` to be np.ndarray or float" in str(excinfo)
+
+        # Wrong type for STD
+        for STD in type_mistakes:
+            if STD == 0:
+                continue
+            with pytest.raises(TypeError) as excinfo:
+                transform.transform_image(
+                    img, (np.array([1]), np.array([1])), 1.0, STD)
+            assert "Expected `std` to be float" in str(excinfo)
 
 
 def test_get_Exif(monkeypatch):
