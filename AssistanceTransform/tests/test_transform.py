@@ -56,6 +56,20 @@ def test_transform_image(monkeypatch):
     transformed_points = transform.transform_image(*params, iters=1e4)
     assert np.allclose(real_points, transformed_points)
 
+    # FIXME: Finish
+    # # Passing meta data through dict
+    # meta_data = {"focal_length": 3.99, "image_size": (4032, 3024), "sensor_size": (4.8, 3.5)}
+
+    # real_points = np.array([[-3.09528585, 0.52329793, 0.],
+    #                         [-1.55305869, 0.78906081, 0.],
+    #                         [-1.37216748, 1.45367847, 0.],
+    #                         [-2.69796131, 1.27978954, 0.]])
+    # # Set random seed
+    # np.random.seed(0)
+    # transformed_points = transform.transform_image(*params, meta_data=meta_data,iter=1e4)
+
+    # TODO: test meta data typ checking
+    # Fake image fake exif data
     type_mistakes = ["str", 0, [0, 1]]
     with monkeypatch.context() as m:
         img = Image.new("RGB", (30, 30), color="red")
