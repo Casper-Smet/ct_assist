@@ -1,0 +1,2 @@
+class MissingExifError(Exception):
+    pass
