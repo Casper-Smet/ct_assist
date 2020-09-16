@@ -29,21 +29,25 @@ def transform_image(img: Image.Image, reference: Tuple[np.ndarray, np.ndarray], 
     """
     # Check if img is PIL.Image.Image
     if not isinstance(img, Image.Image):
-        raise TypeError(f"Expected `img` to be PIL.Image.Image, not {type(img)}")
+        raise TypeError(
+            f"Expected `img` to be PIL.Image.Image, not {type(img)}")
 
     # TODO: Check contents of tuple
     # Check if reference is a tuple
     if not isinstance(reference, tuple):
-        raise TypeError(f"Expected `reference` to be tuple(np.ndarray, np.ndarray), not {type(reference)}")
-    
+        raise TypeError(
+            f"Expected `reference` to be tuple(np.ndarray, np.ndarray), not {type(reference)}")
+
     # Check if height is int or float or np.ndarray
     if not isinstance(height, (int, float, np.ndarray)):
-        raise TypeError(f"Expected `height` to be np.ndarray or float, not {type(height)}")
+        raise TypeError(
+            f"Expected `height` to be np.ndarray or float, not {type(height)}")
 
     # Check if STD is int or float or np.ndarray
     if not isinstance(STD, (int, float, np.ndarray)):
-        raise TypeError(f"Expected `STD` to be np.ndarray or float, not {type(STD)}")
-    
+        raise TypeError(
+            f"Expected `STD` to be np.ndarray or float, not {type(STD)}")
+
     # Get Focal length, image size, sensor size from image meta data
     f, image_size, sensor_size = get_Exif(img)
     # Initialise projection
