@@ -3,11 +3,12 @@ from typing import Tuple
 import cameratransform as ct
 import numpy as np
 from PIL import Image
-from PIL.ExifTags import TAGS
+
+from AssistanceTransform.exceptions import MissingExifError
 
 
 def transform_image(img: Image.Image, reference: Tuple[np.ndarray, np.ndarray], height: np.ndarray, STD: int, image_coords: np.ndarray,
-                    meta_data: dict = None, z: int = 0, *args, **kwargs) -> np.ndarray:
+                    meta_data: dict = None, z: float = 0.0, *args, **kwargs) -> np.ndarray:
     """Function composition for transforming image-coordinates to real-world coordinates
     using the other functions declared in transform.py.
 
@@ -16,7 +17,7 @@ def transform_image(img: Image.Image, reference: Tuple[np.ndarray, np.ndarray], 
     :param reference: Tuple with reference object (heads, feet)
     :type reference: Tuple[np.ndarray, np.ndarray]
     :param height: Height(s) of reference
-    :type height: np.ndarray
+    :type height: np.ndarray or float
     :param image_coords: Coordinates you wish to transform to real-world
     :type image_coords: np.ndarray
     :param z: Points, defaults to 0
@@ -28,7 +29,7 @@ def transform_image(img: Image.Image, reference: Tuple[np.ndarray, np.ndarray], 
     pass
 
 
-def getExif(img: Image.Image) -> Tuple[float, Tuple[int, int], Tuple[float, float]]:
+def get_Exif(img: Image.Image) -> Tuple[float, Tuple[int, int], Tuple[float, float]]:
     """Extracts or estimates image meta data for Camera intrinsic properties.
 
     Extracts:
@@ -41,7 +42,26 @@ def getExif(img: Image.Image) -> Tuple[float, Tuple[int, int], Tuple[float, floa
     :return: (focal length, image size, sensor size)
     :rtype: Tuple[float, Tuple[int, int], Tuple[float, float]]
     """
-    pass
+    # TODO: Add support for lens look up table
+    exif_data = img.getexif()
+    f = exif_data.get(37386)
+    # If focal length is unknown, CameraTransform cannot be used
+    if f is None:
+        raise MissingExifError("Actual Focal Length not found in exif")
+
+    img_size = img.size
+
+    resolution = exif_data.get(41486), exif_data.get(41487)
+    if resolution[0] is not None and resolution[1] is not None:
+        sensor_size = sensor_size_resolution(resolution, img_size)
+    else:
+        effective_f = exif_data.get(41989)
+        # If neither FocalPlaneResolution or effective focal length is known, CameraTransform may not be used
+        if effective_f is None:
+            raise MissingExifError(
+                "FocalPlane(X/Y)Resolution and effective focal length not found in exif")
+        sensor_size = sensor_size_crop_factor(effective_f, f)
+    return f, img_size, sensor_size
 
 
 def sensor_size_resolution(resolution: Tuple, image_size: Tuple[int, int]) -> Tuple[float, float]:
