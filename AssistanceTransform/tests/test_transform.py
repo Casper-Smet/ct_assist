@@ -2,10 +2,12 @@ from typing import Tuple
 
 import cameratransform as ct
 import numpy as np
+import pytest
 from PIL import Image
 from PIL.ExifTags import TAGS
 
 from AssistanceTransform import transform
+from AssistanceTransform.exceptions import MissingExifError
 
 
 def test_transform_image():
@@ -14,9 +16,99 @@ def test_transform_image():
     assert False
 
 
-def test_getExif():
+def test_get_Exif(monkeypatch):
     """Extracts or estimates image meta data for Camera intrinsic properties."""
-    assert False
+    # Fake the Image object and Exif data, FocalPlaneResolution
+    with monkeypatch.context() as m:
+        img = Image.new("RGB", (30, 30), color='red')
+        m.setattr(img, "getexif", {37386: 0.6, 41486: 15, 41487: 7.5})
+        assert transform.getExif(img) == (0.6, (30, 30), (50.8, 101.6))
+
+    # Fake the Image object and Exif data, crop factor
+    with monkeypatch.context() as m:
+        img = Image.new("RGB", (30, 30), color='red')
+        m.setattr(img, "getexif", {37386: 4, 41989: 8})
+        assert transform.getExif(img) == (0.6, (30, 30), (18, 12))
+        
+    # Missing both actual focal length
+    with monkeypatch.context() as m:
+        img = Image.new("RGB", (30, 30), color='red')
+        m.setattr(img, "getexif", {41486: 15, 41487: 7.5})
+        with pytest.raises(MissingExifError) as excinfo:
+            transform.get_Exif(img)
+        assert "Actual Focal Length" in str(excinfo)
+
+    # Missing both FocalPlaneResolution and effective focal length
+    with monkeypatch.context() as m:
+        img = Image.new("RGB", (30, 30), color='red')
+        m.setattr(img, "getexif", {37386: 4})
+        with pytest.raises(MissingExifError) as excinfo:
+            transform.get_Exif(img)
+        assert "FocalPlane(X/Y)Resolution and effective focal length" in str(excinfo)
+
+    # Incorrect type for actual focal length - str
+    with monkeypatch.context() as m:
+        img = Image.new("RGB", (30, 30), color='red')
+        m.setattr(img, "getexif", {37386: "str", 41486: 15, 41487: 7.5})
+        with pytest.raises(TypeError) as excinfo:
+            transform.get_Exif(img)
+        assert "Actual focal length" in str(excinfo)
+
+    # Incorrect type for actual focal length - list
+    with monkeypatch.context() as m:
+        img = Image.new("RGB", (30, 30), color='red')
+        m.setattr(img, "getexif", {37386: [1, 2], 41486: 15, 41487: 7.5})
+        with pytest.raises(TypeError) as excinfo:
+            transform.get_Exif(img)
+        assert "Actual focal length" in str(excinfo)
+
+    # Incorrect type for FocalPlaneXResolution - str
+    with monkeypatch.context() as m:
+        img = Image.new("RGB", (30, 30), color='red')
+        m.setattr(img, "getexif", {37386: 28.1, 41486: "str", 41487: 7.5})
+        with pytest.raises(TypeError) as excinfo:
+            transform.get_Exif(img)
+        assert "FocalPlaneXResolution" in str(excinfo)
+
+    # Incorrect type for FocalPlaneXResolution - list
+    with monkeypatch.context() as m:
+        img = Image.new("RGB", (30, 30), color='red')
+        m.setattr(img, "getexif", {37386: 28.1, 41486: [1, 2], 41487: 7.5})
+        with pytest.raises(TypeError) as excinfo:
+            transform.get_Exif(img)
+        assert "FocalPlaneXResolution" in str(excinfo)
+
+    # Incorrect type for FocalPlaneYResolution - str
+    with monkeypatch.context() as m:
+        img = Image.new("RGB", (30, 30), color='red')
+        m.setattr(img, "getexif", {37386: 7.5, 41486: 15, 41487: "str"})
+        with pytest.raises(TypeError) as excinfo:
+            transform.get_Exif(img)
+        assert "FocalPlaneYResolution" in str(excinfo)
+
+    # Incorrect type for FocalPlaneYResolution - list
+    with monkeypatch.context() as m:
+        img = Image.new("RGB", (30, 30), color='red')
+        m.setattr(img, "getexif", {37386: 7.5, 41486: 15, 41487: [1, 2]})
+        with pytest.raises(TypeError) as excinfo:
+            transform.get_Exif(img)
+        assert "FocalPlaneYResolution" in str(excinfo)
+
+    # Incorrect type for effective focal length - str
+    with monkeypatch.context() as m:
+        img = Image.new("RGB", (30, 30), color='red')
+        m.setattr(img, "getexif", {37386: 4, 41989: "str"})
+        with pytest.raises(TypeError) as excinfo:
+            transform.get_Exif(img)
+        assert "Effective focal length" in str(excinfo)
+
+    # Incorrect type for effective focal length - list
+    with monkeypatch.context() as m:
+        img = Image.new("RGB", (30, 30), color='red')
+        m.setattr(img, "getexif", {37386: 4, 41989: [1, 2]})
+        with pytest.raises(TypeError) as excinfo:
+            transform.get_Exif(img)
+        assert "Effective focal length" in str(excinfo)
 
 
 def test_sensor_size_resolution():
