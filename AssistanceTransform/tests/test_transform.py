@@ -34,7 +34,8 @@ def test_transform_image(monkeypatch):
             with pytest.raises(TypeError) as excinfo:
                 transform.transform_image(
                     img, reference, 1.0, 1)
-            assert "Expected `reference` to be tuple(np.ndarray, np.ndarray)" in str(excinfo)
+            assert "Expected `reference` to be tuple(np.ndarray, np.ndarray)" in str(
+                excinfo)
 
         # Wrong type for height
         for height in type_mistakes:
@@ -43,7 +44,8 @@ def test_transform_image(monkeypatch):
             with pytest.raises(TypeError) as excinfo:
                 transform.transform_image(
                     img, (np.array([1]), np.array([1])), height, 1)
-            assert "Expected `height` to be np.ndarray or float" in str(excinfo)
+            assert "Expected `height` to be np.ndarray or float" in str(
+                excinfo)
 
         # Wrong type for STD
         for STD in type_mistakes:
