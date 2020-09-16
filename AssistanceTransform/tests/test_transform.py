@@ -20,20 +20,20 @@ def test_transform_image(monkeypatch):
     type_mistakes = ["str", 0, [0, 1]]
     with monkeypatch.context() as m:
         img = Image.new("RGB", (30, 30), color="red")
-        m.setattr(img, "getexif", {37386: 0.6, 41486: 15, 41487: 7.5})
+        m.setattr(img, "getexif", lambda: {37386: 0.6, 41486: 15, 41487: 7.5})
 
         # Wrong type for image
         for img_ in type_mistakes:
             with pytest.raises(TypeError) as excinfo:
                 transform.transform_image(
-                    img_, (np.array([1]), np.array([1])), 1.0, 1)
+                    img_, (np.array([1]), np.array([1])), 1.0, 1, np.array([1]))
             assert "Expected `img` to be PIL.Image.Image" in str(excinfo)
 
         # Wrong type for reference
         for reference in type_mistakes:
             with pytest.raises(TypeError) as excinfo:
                 transform.transform_image(
-                    img, reference, 1.0, 1)
+                    img, reference, 1.0, 1, np.array([1]))
             assert "Expected `reference` to be tuple(np.ndarray, np.ndarray)" in str(
                 excinfo)
 
@@ -43,7 +43,7 @@ def test_transform_image(monkeypatch):
                 pass
             with pytest.raises(TypeError) as excinfo:
                 transform.transform_image(
-                    img, (np.array([1]), np.array([1])), height, 1)
+                    img, (np.array([1]), np.array([1])), height, 1, np.array([1]))
             assert "Expected `height` to be np.ndarray or float" in str(
                 excinfo)
 
@@ -53,7 +53,7 @@ def test_transform_image(monkeypatch):
                 continue
             with pytest.raises(TypeError) as excinfo:
                 transform.transform_image(
-                    img, (np.array([1]), np.array([1])), 1.0, STD)
+                    img, (np.array([1]), np.array([1])), 1.0, STD, np.array([1]))
             assert "Expected `std` to be float" in str(excinfo)
 
 
@@ -62,14 +62,14 @@ def test_get_Exif(monkeypatch):
     # Fake the Image object and Exif data, FocalPlaneimage_size
     with monkeypatch.context() as m:
         img = Image.new("RGB", (30, 30), color="red")
-        m.setattr(img, "getexif", {37386: 0.6, 41486: 15, 41487: 7.5})
+        m.setattr(img, "getexif", lambda: {37386: 0.6, 41486: 15, 41487: 7.5})
         assert transform.get_Exif(img) == (0.6, (30, 30), (50.8, 101.6))
 
     # Fake the Image object and Exif data, crop factor
     with monkeypatch.context() as m:
         img = Image.new("RGB", (30, 30), color='red')
-        m.setattr(img, "getexif", {37386: 4, 41989: 8})
-        assert transform.getExif(img) == (0.6, (30, 30), (18, 12))
+        m.setattr(img, "getexif", lambda: {37386: 4, 41989: 8})
+        assert transform.get_Exif(img) == (0.6, (30, 30), (18, 12))
 
     # Missing actual focal length
     with monkeypatch.context() as m:
@@ -82,7 +82,7 @@ def test_get_Exif(monkeypatch):
     # Missing both FocalPlaneResolution and effective focal length
     with monkeypatch.context() as m:
         img = Image.new("RGB", (30, 30), color='red')
-        m.setattr(img, "getexif", {37386: 4})
+        m.setattr(img, "getexif", lambda: {37386: 4})
         with pytest.raises(MissingExifError) as excinfo:
             transform.get_Exif(img)
         assert "FocalPlane(X/Y)Resolution and effective focal length" in str(excinfo)
@@ -117,7 +117,7 @@ def test_get_Exif(monkeypatch):
     # Incorrect type for actual focal length - str
     with monkeypatch.context() as m:
         img = Image.new("RGB", (30, 30), color='red')
-        m.setattr(img, "getexif", {37386: "str", 41486: 15, 41487: 7.5})
+        m.setattr(img, "getexif", lambda: {37386: "str", 41486: 15, 41487: 7.5})
         with pytest.raises(TypeError) as excinfo:
             transform.get_Exif(img)
         assert "Actual focal length" in str(excinfo)
@@ -125,7 +125,7 @@ def test_get_Exif(monkeypatch):
     # Incorrect type for actual focal length - list
     with monkeypatch.context() as m:
         img = Image.new("RGB", (30, 30), color='red')
-        m.setattr(img, "getexif", {37386: [1, 2], 41486: 15, 41487: 7.5})
+        m.setattr(img, "getexif", lambda: {37386: [1, 2], 41486: 15, 41487: 7.5})
         with pytest.raises(TypeError) as excinfo:
             transform.get_Exif(img)
         assert "Actual focal length" in str(excinfo)
@@ -133,7 +133,7 @@ def test_get_Exif(monkeypatch):
     # Incorrect type for FocalPlaneXResolution - str
     with monkeypatch.context() as m:
         img = Image.new("RGB", (30, 30), color='red')
-        m.setattr(img, "getexif", {37386: 28.1, 41486: "str", 41487: 7.5})
+        m.setattr(img, "getexif", lambda: {37386: 28.1, 41486: "str", 41487: 7.5})
         with pytest.raises(TypeError) as excinfo:
             transform.get_Exif(img)
         assert "FocalPlaneXResolution" in str(excinfo)
@@ -141,7 +141,7 @@ def test_get_Exif(monkeypatch):
     # Incorrect type for FocalPlaneXResolution - list
     with monkeypatch.context() as m:
         img = Image.new("RGB", (30, 30), color='red')
-        m.setattr(img, "getexif", {37386: 28.1, 41486: [1, 2], 41487: 7.5})
+        m.setattr(img, "getexif", lambda: {37386: 28.1, 41486: [1, 2], 41487: 7.5})
         with pytest.raises(TypeError) as excinfo:
             transform.get_Exif(img)
         assert "FocalPlaneXResolution" in str(excinfo)
@@ -149,7 +149,7 @@ def test_get_Exif(monkeypatch):
     # Incorrect type for FocalPlaneYResolution - str
     with monkeypatch.context() as m:
         img = Image.new("RGB", (30, 30), color='red')
-        m.setattr(img, "getexif", {37386: 7.5, 41486: 15, 41487: "str"})
+        m.setattr(img, "getexif", lambda: {37386: 7.5, 41486: 15, 41487: "str"})
         with pytest.raises(TypeError) as excinfo:
             transform.get_Exif(img)
         assert "FocalPlaneYResolution" in str(excinfo)
@@ -157,7 +157,7 @@ def test_get_Exif(monkeypatch):
     # Incorrect type for FocalPlaneYResolution - list
     with monkeypatch.context() as m:
         img = Image.new("RGB", (30, 30), color='red')
-        m.setattr(img, "getexif", {37386: 7.5, 41486: 15, 41487: [1, 2]})
+        m.setattr(img, "getexif", lambda: {37386: 7.5, 41486: 15, 41487: [1, 2]})
         with pytest.raises(TypeError) as excinfo:
             transform.get_Exif(img)
         assert "FocalPlaneYResolution" in str(excinfo)
@@ -165,7 +165,7 @@ def test_get_Exif(monkeypatch):
     # Incorrect type for effective focal length - str
     with monkeypatch.context() as m:
         img = Image.new("RGB", (30, 30), color='red')
-        m.setattr(img, "getexif", {37386: 4, 41989: "str"})
+        m.setattr(img, "getexif", lambda: {37386: 4, 41989: "str"})
         with pytest.raises(TypeError) as excinfo:
             transform.get_Exif(img)
         assert "Effective focal length" in str(excinfo)
@@ -173,7 +173,7 @@ def test_get_Exif(monkeypatch):
     # Incorrect type for effective focal length - list
     with monkeypatch.context() as m:
         img = Image.new("RGB", (30, 30), color='red')
-        m.setattr(img, "getexif", {37386: 4, 41989: [1, 2]})
+        m.setattr(img, "getexif", lambda: {37386: 4, 41989: [1, 2]})
         with pytest.raises(TypeError) as excinfo:
             transform.get_Exif(img)
         assert "Effective focal length" in str(excinfo)
