@@ -1,4 +1,5 @@
 from typing import Tuple
+from numbers import Rational
 
 import cameratransform as ct
 import numpy as np
@@ -43,19 +44,35 @@ def get_Exif(img: Image.Image) -> Tuple[float, Tuple[int, int], Tuple[float, flo
     :rtype: Tuple[float, Tuple[int, int], Tuple[float, float]]
     """
     # TODO: Add support for lens look up table
-    exif_data = img.getexif()
-    f = exif_data.get(37386)
-    # If focal length is unknown, CameraTransform cannot be used
-    if f is None:
-        raise MissingExifError("Actual Focal Length not found in exif")
+
+    if not isinstance(img, Image.Image):
+        raise TypeError(f"Expected PIL.Image.Image, not {type(img)}")
 
     img_size = img.size
     # Image dimensions must 1x1 or greater
     if img_size[0] < 1 or img_size[1] < 1:
         raise DimensionError(f"Dimensions must be greater than 0, not {img_size}")
 
+    exif_data = img.getexif()
+    f = exif_data.get(37386)
+    # If focal length is unknown, CameraTransform cannot be used
+    if f is None:
+        raise MissingExifError("Actual Focal Length not found in exif")
+    # Actual focal length must be float-like
+    if not issubclass(type(f), (Rational, float, int)):
+        raise TypeError(f"Actual focal length must be float, not {type(f)}")
+    # f is most likely Rational, convert to float
+    f = float(f)
+
     resolution = exif_data.get(41486), exif_data.get(41487)
     if resolution[0] is not None and resolution[1] is not None:
+        # FocalPlaneResolutions must be float-like
+        if not issubclass(type(resolution[0]), (Rational, float, int)):
+            raise TypeError(f"FocalPlaneXResolution must be float, not {type(resolution[0])}")
+        if not issubclass(type(resolution[1]), (Rational, float, int)):
+            raise TypeError(f"FocalPlaneYResolution must be float, not {type(resolution[1])}")
+        # FocalPlaneResolution most likely Rational, convert to float
+        resolution = float(resolution[0]), float(resolution[1])
         sensor_size = sensor_size_resolution(resolution, img_size)
     else:
         effective_f = exif_data.get(41989)
@@ -63,6 +80,11 @@ def get_Exif(img: Image.Image) -> Tuple[float, Tuple[int, int], Tuple[float, flo
         if effective_f is None:
             raise MissingExifError(
                 "FocalPlane(X/Y)Resolution and effective focal length not found in exif")
+        # Effective focal length must be float-like
+        if not issubclass(type(effective_f), (Rational, float, int)):
+            raise TypeError(f"Effective focal length must be float, not {type(effective_f)}")
+        # f is most likely Rational, convert to float
+        effective_f = float(effective_f)
         sensor_size = sensor_size_crop_factor(effective_f, f)
     return f, img_size, sensor_size
 
