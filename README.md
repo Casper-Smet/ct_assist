@@ -2,7 +2,7 @@
 EU-project ASSISTANCE: Transforming image-coordinates to real-world coordinates for fluid spills using CameraTransform.
 
 ## Use case
-This library will be applied to images of fluid spills in order to estimate out their area and release rate.
+This library will be applied to images of fluid spills in order to estimate their area and release rate.
 
 
 ## CameraTransform
