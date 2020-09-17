@@ -26,3 +26,6 @@ AssistanceTransform currently does not support installing through PIP or Anacond
 The main purpose of ASSISTANCE project is twofold: **to help and protect different kind of first responders’ (FR) organizations that work together during the mitigation of large disasters (natural or man-made) and to enhance their capabilities and skills for facing complex situations** related to different types of incidents.
 
 For more, see: https://assistance-project.eu/
+
+## Implementation progress
+The CameraTransform section of the pipeline has been implemented. Now working on `Detecting reference objects...`
