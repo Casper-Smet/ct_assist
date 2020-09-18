@@ -68,7 +68,7 @@ def test_transform_image(monkeypatch):
     # np.random.seed(0)
     # transformed_points = transform.transform_image(*params, meta_data=meta_data,iter=1e4)
 
-    # TODO: test meta data typ checking
+    # TODO: test meta data type checking
     # Fake image fake exif data
     type_mistakes = ["str", 0, [0, 1]]
     with monkeypatch.context() as m:
