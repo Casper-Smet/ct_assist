@@ -49,11 +49,11 @@ def transform_image(img: Image.Image, reference: Tuple[np.ndarray, np.ndarray], 
             f"Expected `STD` to be np.ndarray or float, not {type(STD)}")
 
     # If meta_data was passed by user, use that instead
-    if meta_data:
+    if meta_data is not None:
         if not isinstance(meta_data, dict):
             raise TypeError(f"Expected `meta_data` to be of type dict, got {type(meta_data)} instead")
         f, image_size, sensor_size = meta_data.get("focal_length"), meta_data.get("image_size"), meta_data.get("sensor_size")
-        if not isinstance(f, (int, float) or not isinstance(image_size, tuple) or not isinstance(sensor_size, tuple)):
+        if (not isinstance(f, (int, float))) or (not isinstance(image_size, tuple)) or (not isinstance(sensor_size, tuple)):
             raise ValueError(f"Metadata incorrect, check typing: {meta_data}")
     else:
         # Get Focal length, image size, sensor size from image meta data (exif)

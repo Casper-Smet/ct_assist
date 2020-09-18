@@ -56,21 +56,52 @@ def test_transform_image(monkeypatch):
     transformed_points = transform.transform_image(*params, iters=1e4)
     assert np.allclose(real_points, transformed_points)
 
-    # FIXME: Finish
-    # # Passing meta data through dict
-    # meta_data = {"focal_length": 3.99, "image_size": (4032, 3024), "sensor_size": (4.8, 3.5)}
+    # Passing meta data through dict
 
-    # real_points = np.array([[-3.09528585, 0.52329793, 0.],
-    #                         [-1.55305869, 0.78906081, 0.],
-    #                         [-1.37216748, 1.45367847, 0.],
-    #                         [-2.69796131, 1.27978954, 0.]])
-    # # Set random seed
-    # np.random.seed(0)
-    # transformed_points = transform.transform_image(*params, meta_data=meta_data,iter=1e4)
+    meta_data = {"focal_length": 3.99, "image_size": (
+        4032, 3024), "sensor_size": (5.13, 3.4200000000000004)}
 
-    # TODO: test meta data type checking
-    # Fake image fake exif data
+    real_points = np.array([[-2.91491605, 0.5935542, 0.],
+                            [-1.50582375, 0.85940103, 0.],
+                            [-1.58264344, 1.78144992, 0.],
+                            [-3.07163449, 1.56842271, 0.]])
+    # Set random seed
+    np.random.seed(0)
+    transformed_points = transform.transform_image(
+        *params, meta_data=meta_data, iter=1e4)
+    assert np.allclose(real_points, transformed_points)
+
     type_mistakes = ["str", 0, [0, 1]]
+    # Wrong type for meta_data
+    for _meta_data in type_mistakes:
+        with pytest.raises(TypeError) as excinfo:
+            transform.transform_image(*params, meta_data=_meta_data)
+        assert f"Expected `meta_data` to be of type dict, got {type(_meta_data)} instead" in str(
+            excinfo)
+
+    # Check for missing/wrong type focal_length
+    _meta_data = meta_data.copy()
+    del _meta_data["focal_length"]
+    with pytest.raises(ValueError) as excinfo:
+        transform.transform_image(*params, meta_data=_meta_data)
+    assert f"Metadata incorrect, check typing: {_meta_data}" in str(excinfo)
+
+    # Check for missing/wrong type image_size
+    _meta_data = meta_data.copy()
+    del _meta_data["image_size"]
+    print(_meta_data)
+    with pytest.raises(ValueError) as excinfo:
+        transform.transform_image(*params, meta_data=_meta_data)
+    assert f"Metadata incorrect, check typing: {_meta_data}"
+
+    # Check for missing/wrong type sensor_size
+    _meta_data = meta_data.copy()
+    del _meta_data["sensor_size"]
+    with pytest.raises(ValueError) as excinfo:
+        transform.transform_image(*params, meta_data=_meta_data)
+    assert f"Metadata incorrect, check typing: {_meta_data}"
+
+    # Fake image fake exif data
     with monkeypatch.context() as m:
         img = Image.new("RGB", (30, 30), color="red")
         m.setattr(img, "getexif", lambda: {37386: 0.6, 41486: 15, 41487: 7.5})
