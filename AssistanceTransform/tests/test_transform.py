@@ -68,7 +68,7 @@ def test_transform_image(monkeypatch):
     # Set random seed
     np.random.seed(0)
     transformed_points = transform.transform_image(
-        *params, meta_data=meta_data, iter=1e4)
+        *params, meta_data=meta_data, iters=1e4)
     assert np.allclose(real_points, transformed_points)
 
     type_mistakes = ["str", 0, [0, 1]]
@@ -89,7 +89,6 @@ def test_transform_image(monkeypatch):
     # Check for missing/wrong type image_size
     _meta_data = meta_data.copy()
     del _meta_data["image_size"]
-    print(_meta_data)
     with pytest.raises(ValueError) as excinfo:
         transform.transform_image(*params, meta_data=_meta_data)
     assert f"Metadata incorrect, check typing: {_meta_data}"
@@ -100,6 +99,30 @@ def test_transform_image(monkeypatch):
     with pytest.raises(ValueError) as excinfo:
         transform.transform_image(*params, meta_data=_meta_data)
     assert f"Metadata incorrect, check typing: {_meta_data}"
+
+    img = Image.new("RGB", (30, 30), color="red")
+
+    # Contents of reference
+    # Dimensions
+    with pytest.raises(DimensionError) as excinfo:
+        transform.transform_image(
+            img, (np.array([[1]]), ), 1.0, 1, np.array([1]))
+        assert f"Expected `reference` to have length 2, not {len((np.array([[1]])))}" in str(
+            excinfo)
+
+    # np.arrays - 0
+    with pytest.raises(TypeError) as excinfo:
+        transform.transform_image(
+            img, (np.array([[1]]), "str"), 1.0, 1, np.array([1]))
+        assert f"Expected `reference` to be tuple(np.ndarray, np.ndarray), not {(type('str'), type(np.array([[1]])))}" in str(
+            excinfo)
+
+    # np.arrays - 1
+    with pytest.raises(TypeError) as excinfo:
+        transform.transform_image(
+            img, ("str", np.array([[1]])), 1.0, 1, np.array([1]))
+        assert f"Expected `reference` to be tuple(np.ndarray, np.ndarray), not {(type('str'), type(np.array([[1]])))}" in str(
+            excinfo)
 
     # Fake image fake exif data
     with monkeypatch.context() as m:

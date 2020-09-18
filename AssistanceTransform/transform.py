@@ -32,11 +32,20 @@ def transform_image(img: Image.Image, reference: Tuple[np.ndarray, np.ndarray], 
         raise TypeError(
             f"Expected `img` to be PIL.Image.Image, not {type(img)}")
 
-    # TODO: Check contents of tuple
+    # TODO: Make reference an np.ndarray
     # Check if reference is a tuple
     if not isinstance(reference, tuple):
         raise TypeError(
             f"Expected `reference` to be tuple(np.ndarray, np.ndarray), not {type(reference)}")
+
+    # Check length reference
+    if len(reference) != 2:
+        raise DimensionError(
+            f"Expected `reference` to have length 2, not {len(reference)}")
+
+    if not (isinstance(reference[0], np.ndarray) and isinstance(reference[1], np.ndarray)):
+        raise TypeError(
+            f"Expected `reference` to be tuple(np.ndarray, np.ndarray), not {(type(reference[0]), type(reference[1]))}")
 
     # Check if height is int or float or np.ndarray
     if not isinstance(height, (int, float, np.ndarray)):
@@ -51,8 +60,10 @@ def transform_image(img: Image.Image, reference: Tuple[np.ndarray, np.ndarray], 
     # If meta_data was passed by user, use that instead
     if meta_data is not None:
         if not isinstance(meta_data, dict):
-            raise TypeError(f"Expected `meta_data` to be of type dict, got {type(meta_data)} instead")
-        f, image_size, sensor_size = meta_data.get("focal_length"), meta_data.get("image_size"), meta_data.get("sensor_size")
+            raise TypeError(
+                f"Expected `meta_data` to be of type dict, got {type(meta_data)} instead")
+        f, image_size, sensor_size = meta_data.get("focal_length"), meta_data.get(
+            "image_size"), meta_data.get("sensor_size")
         if (not isinstance(f, (int, float))) or (not isinstance(image_size, tuple)) or (not isinstance(sensor_size, tuple)):
             raise ValueError(f"Metadata incorrect, check typing: {meta_data}")
     else:
