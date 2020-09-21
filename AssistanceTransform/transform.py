@@ -123,8 +123,16 @@ def get_Exif(img: Image.Image) -> Tuple[float, Tuple[int, int], Tuple[float, flo
     # f is most likely Rational, convert to float
     f = float(f)
 
+    # Get model name
+    name = exif_data.get(272)
+    # Try getting sensor size from model name
+    sensor_size = sensor_size_look_up(name)
+
+    # Get FocalPlaneXResolution and FocalPlaneYResolution
     resolution = exif_data.get(41486), exif_data.get(41487)
-    if resolution[0] is not None and resolution[1] is not None:
+    if isinstance(sensor_size, tuple):
+        pass
+    elif resolution[0] is not None and resolution[1] is not None:
         # FocalPlaneResolutions must be float-like
         if not issubclass(type(resolution[0]), (Rational, float, int)):
             raise TypeError(
@@ -196,3 +204,18 @@ def sensor_size_crop_factor(effective_f: float, actual_f: float) -> Tuple[float,
     crop_factor = effective_f / actual_f
     sensor_size = (36 / crop_factor, 24 / crop_factor)
     return sensor_size
+
+
+def sensor_size_look_up(model_name: str):
+    """Looks up the sensor size of the photographic device with name `model_name`.
+
+    :param model_name: Model name
+    :type model_name: str
+    """
+    table = {
+        "iPhone SE": (4.8, 3.6),
+        "iPhone 11": (5.76, 4.29),  # Approx
+        "SamsungSM-A202F": (6.40, 4.80)  # Approx
+    }
+
+    return table.get(model_name)
