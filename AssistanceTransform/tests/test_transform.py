@@ -53,20 +53,16 @@ def test_transform_image(monkeypatch):
 
     # Set random seed
     np.random.seed(0)
+    #  Test if transformed_points equal real_points
     transformed_points = transform.transform_image(*params, iters=1e4)
     assert np.allclose(real_points, transformed_points)
 
     # Passing meta data through dict
-
     meta_data = {"focal_length": 3.99, "image_size": (
         4032, 3024), "sensor_size": (5.13, 3.4200000000000004)}
-
-    real_points = np.array([[-2.91491605, 0.5935542, 0.],
-                            [-1.50582375, 0.85940103, 0.],
-                            [-1.58264344, 1.78144992, 0.],
-                            [-3.07163449, 1.56842271, 0.]])
     # Set random seed
     np.random.seed(0)
+    # Test if transformed points equal real_points with meta_data
     transformed_points = transform.transform_image(
         *params, meta_data=meta_data, iters=1e4)
     assert np.allclose(real_points, transformed_points)
@@ -102,14 +98,12 @@ def test_transform_image(monkeypatch):
 
     img = Image.new("RGB", (30, 30), color="red")
 
-    # Contents of reference
-    # Dimensions
+    # Check `reference` dimensions
     with pytest.raises(DimensionError) as excinfo:
         transform.transform_image(
             img, np.array([np.array([[1]]), ]), 1.0, 1, np.array([1]))
         assert f"Expected `reference` to have length 2, not {len((np.array([[1]])))}" in str(
             excinfo)
-
 
     # Fake image fake exif data
     with monkeypatch.context() as m:
@@ -128,7 +122,7 @@ def test_transform_image(monkeypatch):
             with pytest.raises(TypeError) as excinfo:
                 transform.transform_image(
                     img, reference, 1.0, 1, np.array([1]))
-            assert "Expected `reference` to be tuple(np.ndarray, np.ndarray)" in str(
+            assert f"Expected `reference` to be np.ndarray, not {type(reference)}" in str(
                 excinfo)
 
         # Wrong type for height
@@ -137,7 +131,7 @@ def test_transform_image(monkeypatch):
                 continue
             with pytest.raises(TypeError) as excinfo:
                 transform.transform_image(
-                    img, (np.array([1]), np.array([1])), height, 1, np.array([1]))
+                    img, np.array([np.array([[1, 1]]), np.array([[1, 1]])]), height, 1, np.array([1]))
             assert "Expected `height` to be np.ndarray or float" in str(
                 excinfo)
 
@@ -147,7 +141,7 @@ def test_transform_image(monkeypatch):
                 continue
             with pytest.raises(TypeError) as excinfo:
                 transform.transform_image(
-                    img, (np.array([1]), np.array([1])), 1.0, STD, np.array([1]))
+                    img, np.array([np.array([[1, 1]]), np.array([[1, 1]])]), 1.0, STD, np.array([1]))
             assert "Expected `STD` to be np.ndarray or float" in str(excinfo)
 
 
