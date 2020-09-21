@@ -24,7 +24,7 @@ def setup_vars():
 
     annotations = anno_dict["D:\\University\\2020-2021\\Internship\\AssistanceTransform\\notebooks\\data\\table\\img_03.jpg"]
     # feet and heads have been swapped in annotations
-    reference = annotations["feet"], annotations["heads"]
+    reference = np.array([annotations["feet"], annotations["heads"]])
     height = 0.095  # m
     STD = 0.01  # m
     img = Image.open(
@@ -106,23 +106,10 @@ def test_transform_image(monkeypatch):
     # Dimensions
     with pytest.raises(DimensionError) as excinfo:
         transform.transform_image(
-            img, (np.array([[1]]), ), 1.0, 1, np.array([1]))
+            img, np.array([np.array([[1]]), ]), 1.0, 1, np.array([1]))
         assert f"Expected `reference` to have length 2, not {len((np.array([[1]])))}" in str(
             excinfo)
 
-    # np.arrays - 0
-    with pytest.raises(TypeError) as excinfo:
-        transform.transform_image(
-            img, (np.array([[1]]), "str"), 1.0, 1, np.array([1]))
-        assert f"Expected `reference` to be tuple(np.ndarray, np.ndarray), not {(type('str'), type(np.array([[1]])))}" in str(
-            excinfo)
-
-    # np.arrays - 1
-    with pytest.raises(TypeError) as excinfo:
-        transform.transform_image(
-            img, ("str", np.array([[1]])), 1.0, 1, np.array([1]))
-        assert f"Expected `reference` to be tuple(np.ndarray, np.ndarray), not {(type('str'), type(np.array([[1]])))}" in str(
-            excinfo)
 
     # Fake image fake exif data
     with monkeypatch.context() as m:
