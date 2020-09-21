@@ -8,15 +8,15 @@ from PIL import Image
 from AssistanceTransform.exceptions import DimensionError, MissingExifError
 
 
-def transform_image(img: Image.Image, reference: Tuple[np.ndarray, np.ndarray], height: np.ndarray, STD: int, image_coords: np.ndarray,
+def transform_image(img: Image.Image, reference: np.ndarray, height: np.ndarray, STD: int, image_coords: np.ndarray,
                     meta_data: dict = None, z: float = 0.0, iters=1e5, *args, **kwargs) -> np.ndarray:
     """Function composition for transforming image-coordinates to real-world coordinates
     using the other functions declared in transform.py.
 
     :param img: Photograph in PIL image format
     :type img: Image.Image
-    :param reference: Tuple with reference object (heads, feet)
-    :type reference: Tuple[np.ndarray, np.ndarray]
+    :param reference: Tuple with reference object (heads, feet), dim=(2, n, 2)
+    :type reference: np.ndarray
     :param height: Height(s) of reference
     :type height: np.ndarray or float
     :param image_coords: Coordinates you wish to transform to real-world
@@ -32,20 +32,14 @@ def transform_image(img: Image.Image, reference: Tuple[np.ndarray, np.ndarray], 
         raise TypeError(
             f"Expected `img` to be PIL.Image.Image, not {type(img)}")
 
-    # TODO: Make reference an np.ndarray
-    # Check if reference is a tuple
-    if not isinstance(reference, tuple):
+    # Check if reference is a np.ndarray
+    if not isinstance(reference, np.ndarray):
         raise TypeError(
-            f"Expected `reference` to be tuple(np.ndarray, np.ndarray), not {type(reference)}")
-
-    # Check length reference
-    if len(reference) != 2:
+            f"Expected `reference` to be np.ndarray, not {type(reference)}")
+    # Check dimensionality of reference
+    if reference.shape[0] != 2 or reference.shape[2] != 2:
         raise DimensionError(
-            f"Expected `reference` to have length 2, not {len(reference)}")
-
-    if not (isinstance(reference[0], np.ndarray) and isinstance(reference[1], np.ndarray)):
-        raise TypeError(
-            f"Expected `reference` to be tuple(np.ndarray, np.ndarray), not {(type(reference[0]), type(reference[1]))}")
+            f"Expected `reference` with dimension (2, n, 2), not {reference.shape}")
 
     # Check if height is int or float or np.ndarray
     if not isinstance(height, (int, float, np.ndarray)):
