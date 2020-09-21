@@ -327,3 +327,12 @@ def test_sensor_size_crop_factor():
     with pytest.raises(ZeroDivisionError) as excinfo:
         transform.sensor_size_crop_factor(1, 0)
     assert "Actual" in str(excinfo)
+
+
+def test_sensor_size_look_up():
+    """Looks up the sensor size of the photographic device with name `model_name`."""
+    assert transform.sensor_size_look_up("iPhone SE") == (4.8, 3.6)
+    assert transform.sensor_size_look_up("iPhone 11") == (5.76, 4.29)
+    assert transform.sensor_size_look_up("SamsungSM-A202F") == (6.40, 4.80)
+
+    assert transform.sensor_size_look_up("test") is None
