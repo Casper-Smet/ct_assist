@@ -101,8 +101,8 @@ def get_Exif(img: Image.Image) -> Tuple[float, Tuple[int, int], Tuple[float, flo
     :return: (focal length, image size, sensor size)
     :rtype: Tuple[float, Tuple[int, int], Tuple[float, float]]
     """
-    # TODO: Add support for lens look up table
 
+    # Check if img is PILL.Image
     if not isinstance(img, Image.Image):
         raise TypeError(f"Expected PIL.Image.Image, not {type(img)}")
 
