@@ -147,6 +147,13 @@ def test_transform_image(monkeypatch):
 
 def test_get_Exif(monkeypatch):
     """Extracts or estimates image meta data for Camera intrinsic properties."""
+
+    # Fake iPhone SE model name
+    with monkeypatch.context() as m:
+        img = Image.new("RGB", (30, 30), color="red")
+        m.setattr(img, "getexif", lambda: {37386: 0.6, 272: "iPhone SE"})
+        assert transform.get_Exif(img) == (0.6, (30, 30), (4.8, 3.6))
+
     # Fake the Image object and Exif data, FocalPlaneimage_size
     with monkeypatch.context() as m:
         img = Image.new("RGB", (30, 30), color="red")
