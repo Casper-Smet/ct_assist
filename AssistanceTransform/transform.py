@@ -27,6 +27,8 @@ def transform_image(img: Image.Image, reference: np.ndarray, height: np.ndarray,
     :return: image_coords transformed to real-world coordinates
     :rtype: np.ndarray
     """
+    # TODO Add verbosity option for TQDM
+    # TODO Add verbosity option for trace print
     # Check if img is PIL.Image.Image
     if not isinstance(img, Image.Image):
         raise TypeError(
