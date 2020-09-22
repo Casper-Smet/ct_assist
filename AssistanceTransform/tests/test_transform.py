@@ -42,8 +42,6 @@ def test_transform_image(monkeypatch):
 
     Transformation of images is non-deterministic due to Metropolis Monte Carlo sampling,
     accuracy will be tested seperately."""
-    # TODO Add verbosity option for TQDM
-    # TODO Add verbosity option for trace print
 
     # Test using real data
     real_points = np.array([[-3.09528585, 0.52329793, 0.],

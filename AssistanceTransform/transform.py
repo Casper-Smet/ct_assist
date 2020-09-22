@@ -9,7 +9,7 @@ from AssistanceTransform.exceptions import DimensionError, MissingExifError
 
 
 def transform_image(img: Image.Image, reference: np.ndarray, height: np.ndarray, STD: int, image_coords: np.ndarray,
-                    meta_data: dict = None, z: float = 0.0, iters=1e5, *args, **kwargs) -> np.ndarray:
+                    meta_data: dict = None, z: float = 0.0, iters=1e5, verbose=False, *args, **kwargs) -> np.ndarray:
     """Function composition for transforming image-coordinates to real-world coordinates
     using the other functions declared in transform.py.
 
@@ -24,11 +24,12 @@ def transform_image(img: Image.Image, reference: np.ndarray, height: np.ndarray,
     :param z: Points, defaults to 0
     :type z: int, optional
     :param meta_data: image meta data for intrinsic camera properties, defaults to None
+    :type meta_data: dict
+    :param verbose: If progress bar and trace should be printed, defaults to False
+    :type verbose: bool
     :return: image_coords transformed to real-world coordinates
     :rtype: np.ndarray
     """
-    # TODO Add verbosity option for TQDM
-    # TODO Add verbosity option for trace print
     # Check if img is PIL.Image.Image
     if not isinstance(img, Image.Image):
         raise TypeError(
@@ -83,7 +84,7 @@ def transform_image(img: Image.Image, reference: np.ndarray, height: np.ndarray,
         ct.FitParameter("tilt_deg", lower=0, upper=180, value=80),
         ct.FitParameter("heading_deg", lower=-180, upper=180, value=-77),
         ct.FitParameter("roll_deg", lower=-180, upper=180, value=0)
-    ], iterations=iters)
+    ], iterations=iters, print_trace=verbose, disable_bar=not verbose)
 
     real_pos = cam.spaceFromImage(points=image_coords, Z=z)
 
