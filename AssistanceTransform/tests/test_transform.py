@@ -44,27 +44,23 @@ def test_transform_image(monkeypatch):
     accuracy will be tested seperately."""
 
     # Test using real data
-    real_points = np.array([[-3.09528585, 0.52329793, 0.],
-                            [-1.55305869, 0.78906081, 0.],
-                            [-1.37216748, 1.45367847, 0.],
-                            [-2.69796131, 1.27978954, 0.]])
+    real_points = np.array([[-3.3518353, 0.4124983, 0.],
+                            [-1.6383052, 0.72337879, 0.],
+                            [-1.82506649, 1.6064894, 0.],
+                            [-3.6821136, 1.45151892, 0.]])
 
     params = setup_vars()
 
-    # Set random seed
-    np.random.seed(0)
     #  Test if transformed_points equal real_points
-    transformed_points = transform.transform_image(*params, iters=1e4)
+    transformed_points = transform.transform_image(*params, iters=1e4, seed=0)
     assert np.allclose(real_points, transformed_points)
 
     # Passing meta data through dict
     meta_data = {"focal_length": 3.99, "image_size": (
-        4032, 3024), "sensor_size": (5.13, 3.4200000000000004)}
-    # Set random seed
-    np.random.seed(0)
+        4032, 3024), "sensor_size": (4.8, 3.5)}
     # Test if transformed points equal real_points with meta_data
     transformed_points = transform.transform_image(
-        *params, meta_data=meta_data, iters=1e4)
+        *params, meta_data=meta_data, iters=1e4, seed=0)
     assert np.allclose(real_points, transformed_points)
 
     type_mistakes = ["str", 0, [0, 1]]

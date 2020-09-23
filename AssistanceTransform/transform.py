@@ -9,7 +9,7 @@ from AssistanceTransform.exceptions import DimensionError, MissingExifError
 
 
 def transform_image(img: Image.Image, reference: np.ndarray, height: np.ndarray, STD: int, image_coords: np.ndarray,
-                    meta_data: dict = None, z: float = 0.0, iters=1e5, verbose=False, *args, **kwargs) -> np.ndarray:
+                    meta_data: dict = None, z: float = 0.0, iters=1e5, verbose=False, seed: int = None, *args, **kwargs) -> np.ndarray:
     """Function composition for transforming image-coordinates to real-world coordinates
     using the other functions declared in transform.py.
 
@@ -66,6 +66,14 @@ def transform_image(img: Image.Image, reference: np.ndarray, height: np.ndarray,
     else:
         # Get Focal length, image size, sensor size from image meta data (exif)
         f, image_size, sensor_size = get_Exif(img)
+
+    # If random seed is given, set numpy.random.seed
+    if seed is not None:
+        # As CameraTransform uses the np legacy version of RNG, this is the only way one can set the seed
+        # This is, however, not the prefered way to do this.
+        # See: https://numpy.org/doc/stable/reference/random/generated/numpy.random.seed.html
+        np.random.seed(seed)
+
     # Initialise projection
     proj = ct.RectilinearProjection(focallength_mm=f,
                                     sensor=sensor_size,
