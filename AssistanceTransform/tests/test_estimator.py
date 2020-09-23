@@ -63,4 +63,5 @@ def test_area():
 
 def test_estimate_release_rate():
     """Estimates release rate of fluid based on size of fluid spill at `n` different time indices."""
-    assert False
+    raise NotImplementedError(
+        "Function `estimate_release_rate` in module `estimator.py` has not yet been implemented")
