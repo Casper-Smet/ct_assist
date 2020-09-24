@@ -227,7 +227,8 @@ def sensor_size_look_up(model_name: str):
         "iPhone SE": (4.8, 3.6),
         "iPhone 11": (5.76, 4.29),  # Approx
         "iPhone 8 Plus": (4.8, 3.5),
-        "SamsungSM-A202F": (6.40, 4.80)  # Approx
+        "SamsungSM-A202F": (6.40, 4.80),  # Approx
+        "SM-A515F": (6.16, 4.55)  # Approx
     }
 
     return table.get(model_name)
