@@ -10,7 +10,7 @@ from AssistanceTransform.exceptions import DimensionError, MissingExifError
 
 
 def setup_vars():
-    """Loads data for test_transform_image"""
+    """Loads data for test_fit_transform"""
     data_dir = r"./notebooks/data/table"
     json_fp = os.path.join(data_dir, "anno.json")
     arr_fp = os.path.join(data_dir, "anno.npz")
@@ -36,7 +36,7 @@ def setup_vars():
     return (img, reference, height, STD, image_coords)
 
 
-def test_transform_image(monkeypatch):
+def test_fit_transform(monkeypatch):
     """Function composition for transforming image-coordinates to real-world coordinates
     using the other functions declared in transform.py.
 
@@ -52,14 +52,14 @@ def test_transform_image(monkeypatch):
     params = setup_vars()
 
     #  Test if transformed_points equal real_points
-    transformed_points = transform.transform_image(*params, iters=1e4, seed=0)
+    transformed_points = transform.fit_transform(*params, iters=1e4, seed=0)
     assert np.allclose(real_points, transformed_points)
 
     # Passing meta data through dict
     meta_data = {"focal_length": 3.99, "image_size": (
         4032, 3024), "sensor_size": (4.8, 3.5)}
     # Test if transformed points equal real_points with meta_data
-    transformed_points = transform.transform_image(
+    transformed_points = transform.fit_transform(
         *params, meta_data=meta_data, iters=1e4, seed=0)
     assert np.allclose(real_points, transformed_points)
 
@@ -67,7 +67,7 @@ def test_transform_image(monkeypatch):
     # Wrong type for meta_data
     for _meta_data in type_mistakes:
         with pytest.raises(TypeError) as excinfo:
-            transform.transform_image(*params, meta_data=_meta_data)
+            transform.fit_transform(*params, meta_data=_meta_data)
         assert f"Expected `meta_data` to be of type dict, got {type(_meta_data)} instead" in str(
             excinfo)
 
@@ -75,28 +75,28 @@ def test_transform_image(monkeypatch):
     _meta_data = meta_data.copy()
     del _meta_data["focal_length"]
     with pytest.raises(ValueError) as excinfo:
-        transform.transform_image(*params, meta_data=_meta_data)
+        transform.fit_transform(*params, meta_data=_meta_data)
     assert f"Metadata incorrect, check typing: {_meta_data}" in str(excinfo)
 
     # Check for missing/wrong type image_size
     _meta_data = meta_data.copy()
     del _meta_data["image_size"]
     with pytest.raises(ValueError) as excinfo:
-        transform.transform_image(*params, meta_data=_meta_data)
+        transform.fit_transform(*params, meta_data=_meta_data)
     assert f"Metadata incorrect, check typing: {_meta_data}"
 
     # Check for missing/wrong type sensor_size
     _meta_data = meta_data.copy()
     del _meta_data["sensor_size"]
     with pytest.raises(ValueError) as excinfo:
-        transform.transform_image(*params, meta_data=_meta_data)
+        transform.fit_transform(*params, meta_data=_meta_data)
     assert f"Metadata incorrect, check typing: {_meta_data}"
 
     img = Image.new("RGB", (30, 30), color="red")
 
     # Check `reference` dimensions
     with pytest.raises(DimensionError) as excinfo:
-        transform.transform_image(
+        transform.fit_transform(
             img, np.array([np.array([[1]]), ]), 1.0, 1, np.array([1]))
         assert f"Expected `reference` to have length 2, not {len((np.array([[1]])))}" in str(
             excinfo)
@@ -109,14 +109,14 @@ def test_transform_image(monkeypatch):
         # Wrong type for image
         for img_ in type_mistakes:
             with pytest.raises(TypeError) as excinfo:
-                transform.transform_image(
+                transform.fit_transform(
                     img_, (np.array([1]), np.array([1])), 1.0, 1, np.array([1]))
             assert "Expected `img` to be PIL.Image.Image" in str(excinfo)
 
         # Wrong type for reference
         for reference in type_mistakes:
             with pytest.raises(TypeError) as excinfo:
-                transform.transform_image(
+                transform.fit_transform(
                     img, reference, 1.0, 1, np.array([1]))
             assert f"Expected `reference` to be np.ndarray, not {type(reference)}" in str(
                 excinfo)
@@ -126,7 +126,7 @@ def test_transform_image(monkeypatch):
             if height == 0:
                 continue
             with pytest.raises(TypeError) as excinfo:
-                transform.transform_image(
+                transform.fit_transform(
                     img, np.array([np.array([[1, 1]]), np.array([[1, 1]])]), height, 1, np.array([1]))
             assert "Expected `height` to be np.ndarray or float" in str(
                 excinfo)
@@ -136,7 +136,7 @@ def test_transform_image(monkeypatch):
             if STD == 0:
                 continue
             with pytest.raises(TypeError) as excinfo:
-                transform.transform_image(
+                transform.fit_transform(
                     img, np.array([np.array([[1, 1]]), np.array([[1, 1]])]), 1.0, STD, np.array([1]))
             assert "Expected `STD` to be np.ndarray or float" in str(excinfo)
 
