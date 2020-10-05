@@ -13,20 +13,55 @@ def fit_transform(img: Image.Image, reference: np.ndarray, height: np.ndarray, S
     """Function composition for transforming image-coordinates to real-world coordinates
     using the other functions declared in transform.py.
 
+
     :param img: Photograph in PIL image format
     :type img: Image.Image
     :param reference: Tuple with reference object (heads, feet), dim=(2, n, 2)
     :type reference: np.ndarray
     :param height: Height(s) of reference
     :type height: np.ndarray or float
-    :param image_coords: Coordinates you wish to transform to real-world
-    :type image_coords: np.ndarray
-    :param z: Points, defaults to 0
-    :type z: int, optional
+    :param STD: STD(s) of reference
+    :type STD: np.ndarray or float
     :param meta_data: image meta data for intrinsic camera properties, defaults to None
     :type meta_data: dict
+    :param iters: Amount of iterations in Monte Carlo simulation
+    :type iters: int
     :param verbose: If progress bar and trace should be printed, defaults to False
     :type verbose: bool
+    :param seed: Random seed to be passed to numpy.random.seed (not recommended)
+    :type seed: int
+    :return: image_coords transformed to real-world coordinates
+    :rtype: np.ndarray
+    """
+    
+    cam = fit(img=img, reference=reference, height=height, STD=STD,
+              meta_data=meta_data, iters=iters, verbose=verbose, seed=seed)
+
+    real_pos = cam.spaceFromImage(points=image_coords, Z=z)
+
+    return real_pos
+
+
+def fit(img: Image.Image, reference: np.ndarray, height: np.ndarray, STD: int, meta_data: dict = None, iters=1e4, verbose=False,
+        seed: int = None, *args, **kwargs) -> ct.Camera:
+    """Creates a trained CameraTransform.Camera object. See "https://cameratransform.readthedocs.io/en/latest/camera.html".
+
+    :param img: Photograph in PIL image format
+    :type img: Image.Image
+    :param reference: Tuple with reference object (heads, feet), dim=(2, n, 2)
+    :type reference: np.ndarray
+    :param height: Height(s) of reference
+    :type height: np.ndarray or float
+    :param STD: STD(s) of reference
+    :type STD: np.ndarray or float
+    :param meta_data: image meta data for intrinsic camera properties, defaults to None
+    :type meta_data: dict
+    :param iters: Amount of iterations in Monte Carlo simulation
+    :type iters: int
+    :param verbose: If progress bar and trace should be printed, defaults to False
+    :type verbose: bool
+    :param seed: Random seed to be passed to numpy.random.seed (not recommended)
+    :type seed: int
     :return: image_coords transformed to real-world coordinates
     :rtype: np.ndarray
     """
@@ -94,9 +129,7 @@ def fit_transform(img: Image.Image, reference: np.ndarray, height: np.ndarray, S
         ct.FitParameter("roll_deg", lower=-180, upper=180, value=0)
     ], iterations=iters, print_trace=verbose, disable_bar=not verbose)
 
-    real_pos = cam.spaceFromImage(points=image_coords, Z=z)
-
-    return real_pos
+    return cam
 
 
 def get_Exif(img: Image.Image) -> Tuple[float, Tuple[int, int], Tuple[float, float]]:
