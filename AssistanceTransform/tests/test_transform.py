@@ -43,6 +43,7 @@ def test_fit_transform(monkeypatch):
     Transformation of images is non-deterministic due to Metropolis Monte Carlo sampling,
     accuracy will be tested seperately."""
 
+    # TODO: Test for types `z`, `image_coords`, `seed`, `verbose`, `iters`
     # Test using real data
     real_points = np.array([[-3.3518353, 0.4124983, 0.],
                             [-1.6383052, 0.72337879, 0.],
@@ -144,6 +145,7 @@ def test_fit_transform(monkeypatch):
 
 
 def test_fit(monkeypatch):
+    # TODO: Test for types `z`, `image_coords`, `seed`, `verbose`, `iters`
     # Load preset parameters, without image_coords
     params = setup_vars()[:-1]
 
