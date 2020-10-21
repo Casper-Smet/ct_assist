@@ -64,11 +64,11 @@ def instances_to_dict(preds: dict, thing_classes: dict) -> defaultdict:
 def get_heads_feet(mask: torch.tensor, step_size=5, min_size=0.9):
     head, feet = [], []
     # Get all points where point == 1 (mask)
-    mask_points = mask.nonzero()
+    mask_points = torch.nonzero(mask)  # .nonzero()
     # For each unique value for the x-plane
-    for x in torch.unique(mask_points[...,1]):
+    for x in torch.unique(mask_points[..., 1]):
         # Get the indices at which mask[:, x] == x
-        index = (mask_points.T[1] == x).nonzero()
+        index = torch.nonzero(mask_points.T[1] == x)  # .nonzero()
         # Get all values for y where mask[:, x] == x
         ys = mask_points[index, 0]
         # Get max and min y, cast to CPU
@@ -83,8 +83,8 @@ def get_heads_feet(mask: torch.tensor, step_size=5, min_size=0.9):
     reference = np.array([head, feet])[::-1]
     min_dist = min_size * np.max(reference[1] - reference[0])
     # Remove those that are outside the minimum threshold
-    reference = reference[:, (reference[1] - reference[0])[:,1] >= min_dist]
-    
+    reference = reference[:, (reference[1] - reference[0])[:, 1] >= min_dist]
+
     # Apply step size
     return reference[:, 0::step_size]
 
