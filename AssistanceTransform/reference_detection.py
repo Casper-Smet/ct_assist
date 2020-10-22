@@ -1,6 +1,5 @@
 from collections import defaultdict
 from typing import Tuple, List
-from warnings import warn
 
 import detectron2
 import numpy as np
@@ -67,7 +66,18 @@ def instances_to_dict(preds: dict, thing_classes: list) -> defaultdict:
     return class_dict
 
 
-def get_heads_feet(mask: torch.tensor, step_size=5, min_size=0.9):
+def get_heads_feet(mask: torch.tensor, step_size=5, offset=0.1) -> np.ndarray:
+    """Gets head and feet from torch tensor segmentation mask.
+
+    :param mask: Segmentation mask
+    :type mask: torch.tensor
+    :param step_size: Amount of found head feet pairs to skip to avoid overfitting, defaults to 5
+    :type step_size: int, optional
+    :param offset: Permitted distance from median head-feet distance in percentages, defaults to 0.1
+    :type offset: float, optional
+    :return: Returns numpy array with [heads, feet]
+    :rtype: np.ndarray
+    """
     head, feet = [], []
     # Get all points where point == 1 (mask)
     mask_points = torch.nonzero(mask)  # .nonzero()
@@ -87,15 +97,22 @@ def get_heads_feet(mask: torch.tensor, step_size=5, min_size=0.9):
             feet.append([x, min_y])
     # Turn head, feet into a numpy array and reverse
     reference = np.array([head, feet])[::-1]
-    min_dist = min_size * np.max(reference[1] - reference[0])
-    # Remove those that are outside the minimum threshold
-    reference = reference[:, (reference[1] - reference[0])[:, 1] >= min_dist]
+    # Calculate all distances between heads and feet
+    dist = (reference[1] - reference[0])[:, 1]
+    median_dist = np.median(dist)
+    min_dist = (1 - offset) * median_dist
+    max_dist = (1 + offset) * median_dist
+    # Threshold is median_dist +- offset
+    min_mask = min_dist <= dist
+    max_mask = dist <= max_dist
+    # Remove those that are outside the threshold
+    reference = reference[:, min_mask == max_mask]
 
     # Apply step size
     return reference[:, 0::step_size]
 
 
-def extract_reference(objects: dict, step_size: int = 10, min_size: float = 0.9,
+def extract_reference(objects: dict, step_size: int = 10, offset: float = 0.1,
                       height_dict: dict = const_height_dict) -> List[Tuple[np.ndarray, np.ndarray, float]]:
     """Extracts references from dictionary filled with predictions.
 
@@ -105,8 +122,8 @@ def extract_reference(objects: dict, step_size: int = 10, min_size: float = 0.9,
     :type objects: dict
     :param step_size: How many pixels to skip, defaults to 10
     :type step_size: int, optional
-    :param min_size: Minimum size relative to maximum distance between heads and feet, defaults to 0.9
-    :type min_size: float, optional
+    :param offset: Minimum size relative to maximum distance between heads and feet, defaults to 0.9
+    :type offset: float, optional
     :return: [(reference, height, STD)]
     :rtype: List[Tuple[np.ndarray, np.ndarray, float]]
     """
@@ -118,7 +135,7 @@ def extract_reference(objects: dict, step_size: int = 10, min_size: float = 0.9,
             print(UserWarning(f"Key `{key}` not found in `height_dict`. Skipped this field."))
             continue
         refs = [get_heads_feet(mask, step_size=step_size,
-                               min_size=min_size) for mask in masks]
+                               offset=offset) for mask in masks]
         refs = np.concatenate(refs, axis=1)
         args.append((refs, height, STD))
     return args

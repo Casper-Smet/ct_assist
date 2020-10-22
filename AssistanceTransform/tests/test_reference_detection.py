@@ -20,12 +20,6 @@ def test_load_model():
     assert cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST == 0.7
 
 
-def test_extract_reference():
-    """Extracts reference objects' feet and heads"""
-    raise NotImplementedError(
-        "Function `extract_reference` in `reference_detection.py` has not yet been implemented")
-
-
 def test_instances_to_dict():
     """Take Detectron2.engine.DefaultPredictor output, and turns it into an easily parsable dictionary."""
     instances = Instances(image_size=(1920, 1080))
@@ -62,5 +56,11 @@ def test_get_heads_feet():
                   [8, 7],
                   [9, 7]]]
     reference = np.array(reference)
-    assert (get_heads_feet(mask, step_size=1, min_size=0) == reference).all()
-    assert (get_heads_feet(mask, step_size=2, min_size=0) == reference[:, 0::2]).all()
+    assert (get_heads_feet(mask, step_size=1, offset=0) == reference).all()
+    assert (get_heads_feet(mask, step_size=2, offset=0) == reference[:, 0::2]).all()
+
+
+def test_extract_reference():
+    """Extracts reference objects' feet and heads"""
+    raise NotImplementedError(
+        "Function `extract_reference` in `reference_detection.py` has not yet been implemented")
