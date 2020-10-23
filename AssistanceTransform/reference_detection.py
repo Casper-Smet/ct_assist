@@ -1,5 +1,8 @@
+from AssistanceTransform.exceptions import SkipFieldWarning
+
 from collections import defaultdict
 from typing import Tuple, List
+import warnings
 
 import detectron2
 import numpy as np
@@ -10,6 +13,8 @@ from detectron2.data import DatasetCatalog, MetadataCatalog
 from detectron2.engine import DefaultPredictor
 from detectron2.structures import Instances
 from detectron2.utils.visualizer import Visualizer
+
+warnings.simplefilter("always", SkipFieldWarning)
 
 const_height_dict: dict = {"truck": (3, 1),
                            "person": (1.741, 0.05),
@@ -122,7 +127,7 @@ def extract_reference(objects: dict, step_size: int = 10, offset: float = 0.1,
     :type objects: dict
     :param step_size: How many pixels to skip, defaults to 10
     :type step_size: int, optional
-    :param offset: Minimum size relative to maximum distance between heads and feet, defaults to 0.9
+    :param offset: Minimum size relative to median distance between heads and feet, defaults to 0.9
     :type offset: float, optional
     :return: [(reference, height, STD)]
     :rtype: List[Tuple[np.ndarray, np.ndarray, float]]
@@ -132,7 +137,7 @@ def extract_reference(objects: dict, step_size: int = 10, offset: float = 0.1,
         try:
             height, STD = height_dict.get(key)
         except TypeError:
-            print(UserWarning(f"Key `{key}` not found in `height_dict`. Skipped this field."))
+            warnings.warn(f"Key `{key}` not found in `height_dict`. Skipped this field.", SkipFieldWarning)
             continue
         refs = [get_heads_feet(mask, step_size=step_size,
                                offset=offset) for mask in masks]
