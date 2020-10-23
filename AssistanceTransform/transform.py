@@ -33,7 +33,7 @@ def fit_transform(img: Image.Image, reference: np.ndarray, height: np.ndarray, S
     :return: image_coords transformed to real-world coordinates
     :rtype: np.ndarray
     """
-    # TODO: Test for types `z`, `image_coords`, `seed`, `verbose`, `iters`
+    # TODO: Test for types `seed`, `verbose`, `iters`
     if not isinstance(image_coords, np.ndarray):
         raise TypeError(f"Expected `image_coords` to be of type np.ndarray, not {type(image_coords)}")
     if not isinstance(z, (float, np.ndarray)):
@@ -70,7 +70,7 @@ def fit(img: Image.Image, reference: np.ndarray, height: np.ndarray, STD: int, m
     :return: image_coords transformed to real-world coordinates
     :rtype: np.ndarray
     """
-    # TODO: Test for types `z`, `image_coords`, `seed`, `verbose`, `iters`
+    # TODO: Test for types `seed`, `verbose`, `iters`
     # Check if img is PIL.Image.Image
     if not isinstance(img, Image.Image):
         raise TypeError(
