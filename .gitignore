@@ -1,3 +1,9 @@
+# vscode stuff
+.vscode/
+
+# Jupyter Notebook stuff
+*/.ipynb_checkpoints/*
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -127,3 +133,6 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Sensor database
+*/sensor_database_detailed.csv
