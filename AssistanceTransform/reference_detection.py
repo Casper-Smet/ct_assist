@@ -1,18 +1,15 @@
-from AssistanceTransform.exceptions import SkipFieldWarning
-
-from collections import defaultdict
-from typing import Tuple, List
 import warnings
+from collections import defaultdict
+from typing import List, Tuple
 
-import detectron2
 import numpy as np
 import torch
 from detectron2 import model_zoo
 from detectron2.config import get_cfg
-from detectron2.data import DatasetCatalog, MetadataCatalog
 from detectron2.engine import DefaultPredictor
 from detectron2.structures import Instances
-from detectron2.utils.visualizer import Visualizer
+
+from AssistanceTransform.exceptions import SkipFieldWarning
 
 warnings.simplefilter("always", SkipFieldWarning)
 
@@ -137,7 +134,8 @@ def extract_reference(objects: dict, step_size: int = 10, offset: float = 0.1,
         try:
             height, STD = height_dict.get(key)
         except TypeError:
-            warnings.warn(f"Key `{key}` not found in `height_dict`. Skipped this field.", SkipFieldWarning)
+            warnings.warn(
+                f"Key `{key}` not found in `height_dict`. Skipped this field.", SkipFieldWarning)
             continue
         refs = [get_heads_feet(mask, step_size=step_size,
                                offset=offset) for mask in masks]
