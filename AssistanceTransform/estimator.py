@@ -1,3 +1,9 @@
+"""
+Area estimations
+
+This module is used for estimating the area of a polygon, and estimating the rate at which the polygon increases in size (a.k.a., the release rate)
+"""
+
 import datetime as dt
 from typing import List
 
@@ -7,7 +13,7 @@ from AssistanceTransform.exceptions import DimensionError
 
 
 def area(poly: np.ndarray) -> float:
-    """Estimates the area of a polygon using the .
+    """Estimates the area of a polygon using the shoelace formula.
 
     :param poly: Polygon
     :type poly: Numpy array

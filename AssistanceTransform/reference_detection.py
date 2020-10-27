@@ -1,9 +1,30 @@
+"""Reference Detection
+
+This module contains the functions necessary to extract head-feet pairs from images, load Detectron2 models, and parse the detectron2 output.
+
+Use `get_heads_feet` to extract a head-feet pair from a single instance/binary mask.
+
+Use `extract_reference` to extract a series of head-feet pairs from a single image.
+
+## Usage example:
+```
+ # If you plan on using detectron2
+ predictor, cfg = load_model()  # Basic COCO-trained mask-rcnn, threshold = 0.7
+ preds = predictor(image)  # Your image here
+ from detectron2.data import MetadataCatalog
+ objects = instances_to_dict(preds, MetadataCatalog.get(cfg.DATASETS.TRAIN[0]).get("thing_classes"))
+ reference = extract_reference(objects)  # These are the head-feet pairs!
+
+```
+"""
+
 import warnings
 from collections import defaultdict
 from typing import List, Tuple
 
 import numpy as np
 import torch
+# TODO: Move detectron2 to util files
 from detectron2 import model_zoo
 from detectron2.config import get_cfg
 from detectron2.engine import DefaultPredictor
@@ -16,6 +37,8 @@ warnings.simplefilter("always", SkipFieldWarning)
 const_height_dict: dict = {"truck": (3, 1),
                            "person": (1.741, 0.05),
                            "car": (1.425, 0.0247)}
+
+# TODO: Move to util file
 
 
 def load_model(model_url: str = "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml", threshold: float = 0.7,
@@ -40,6 +63,8 @@ def load_model(model_url: str = "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x
         return predictor, cfg
     else:
         return predictor
+
+# TODO: Move to util file
 
 
 def instances_to_dict(preds: dict, thing_classes: list) -> defaultdict:
