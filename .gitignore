@@ -140,3 +140,6 @@ dmypy.json
 # Data
 notebooks/data/heads_feet/
 notebooks/data/no_tolerance/
+
+# VIM (?)
+*.swp
