@@ -136,3 +136,10 @@ dmypy.json
 
 # Sensor database
 */sensor_database_detailed.csv
+
+# Data
+notebooks/data/heads_feet/
+notebooks/data/no_tolerance/
+
+# VIM (?)
+*.swp
