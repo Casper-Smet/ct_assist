@@ -35,8 +35,8 @@ from AssistanceTransform.exceptions import SkipFieldWarning
 warnings.simplefilter("always", SkipFieldWarning)
 
 HEIGHT_DICT: dict = {"truck": (3, 1),
-                           "person": (1.741, 0.05),
-                           "car": (1.425, 0.0247)}
+                     "person": (1.741, 0.05),
+                     "car": (1.425, 0.0247)}
 
 # TODO: Move to util file
 
