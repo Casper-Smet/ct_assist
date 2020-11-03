@@ -34,7 +34,7 @@ from AssistanceTransform.exceptions import SkipFieldWarning
 
 warnings.simplefilter("always", SkipFieldWarning)
 
-const_height_dict: dict = {"truck": (3, 1),
+HEIGHT_DICT: dict = {"truck": (3, 1),
                            "person": (1.741, 0.05),
                            "car": (1.425, 0.0247)}
 
@@ -140,7 +140,7 @@ def get_heads_feet(mask: torch.tensor, step_size=5, offset=0.1) -> np.ndarray:
 
 
 def extract_reference(objects: dict, step_size: int = 10, offset: float = 0.1,
-                      height_dict: dict = const_height_dict) -> List[Tuple[np.ndarray, float, float]]:
+                      height_dict: dict = HEIGHT_DICT) -> List[Tuple[np.ndarray, float, float]]:
     """Extracts references from dictionary filled with predictions.
 
     See instances_to_dict for objects' format. The output is based on the output for get_heads_feet.
