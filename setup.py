@@ -16,7 +16,7 @@ setuptools.setup(
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
-        "Operating System :: Windows 10 w. CUDA",
+        "Operating System :: Windows 10, Linux",
     ],
     python_requires='>=3.7.7',
 )
