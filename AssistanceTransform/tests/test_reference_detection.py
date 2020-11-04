@@ -2,8 +2,8 @@ import pytest
 
 import torch
 import numpy as np
-from AssistanceTransform import reference_detection as rd
-from AssistanceTransform.exceptions import SkipFieldWarning
+from ct_assist import reference_detection as rd
+from ct_assist.exceptions import SkipFieldWarning
 
 from detectron2.config.config import CfgNode
 from detectron2.engine import DefaultPredictor

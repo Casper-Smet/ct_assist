@@ -4,8 +4,8 @@ import re
 
 import numpy as np
 import pytest
-from AssistanceTransform import transform
-from AssistanceTransform.exceptions import DimensionError, MissingExifError
+from ct_assist import transform
+from ct_assist.exceptions import DimensionError, MissingExifError
 from PIL import Image
 
 
@@ -22,13 +22,13 @@ def setup_vars():
                            "feet": arrs[f"{prefix}feet"]}
                      for img, prefix in mappings.items()}
 
-    annotations = anno_dict["D:\\University\\2020-2021\\Internship\\AssistanceTransform\\notebooks\\data\\table\\img_03.jpg"]
+    annotations = anno_dict["D:\\University\\2020-2021\\Internship\\ct_assist\\notebooks\\data\\table\\img_03.jpg"]
     # feet and heads have been swapped in annotations
     reference = np.array([annotations["feet"], annotations["heads"]])
     height = 0.095  # m
     STD = 0.01  # m
     img = Image.open(
-        "D:\\University\\2020-2021\\Internship\\AssistanceTransform\\notebooks\\data\\table\\img_03.jpg")
+        "D:\\University\\2020-2021\\Internship\\ct_assist\\notebooks\\data\\table\\img_03.jpg")
 
     image_coords = np.array(
         [[1216, 1398], [2215, 1754], [3268, 1530], [2067, 1282]])

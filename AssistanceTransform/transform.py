@@ -14,7 +14,7 @@ import cameratransform as ct
 import numpy as np
 from PIL import Image
 
-from AssistanceTransform.exceptions import DimensionError, MissingExifError
+from ct_assist.exceptions import DimensionError, MissingExifError
 
 
 def fit_transform(img: Image.Image, reference: np.ndarray, height: np.ndarray, STD: int, image_coords: np.ndarray,

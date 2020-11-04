@@ -1,2 +1,2 @@
 [run]
-omit = AssistanceTransform/tests/*
+omit = ct_assist/tests/*

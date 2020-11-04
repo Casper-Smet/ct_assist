@@ -30,7 +30,7 @@ from detectron2.config import get_cfg
 from detectron2.engine import DefaultPredictor
 from detectron2.structures import Instances
 
-from AssistanceTransform.exceptions import SkipFieldWarning
+from ct_assist.exceptions import SkipFieldWarning
 
 warnings.simplefilter("always", SkipFieldWarning)
 

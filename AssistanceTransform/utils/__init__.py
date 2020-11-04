@@ -1,5 +1,5 @@
 """
-Module containing utils for AssistanceTransform
+Module containing utils for ct_assist
 
  - accuracy
  - visualize

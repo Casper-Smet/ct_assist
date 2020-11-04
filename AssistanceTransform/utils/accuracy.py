@@ -4,7 +4,7 @@ import numpy as np
 from sklearn.metrics import mean_squared_error
 from tqdm import tqdm
 
-from AssistanceTransform import transform, estimator
+from ct_assist import transform, estimator
 
 
 def camera_properties(X_test: List[dict], Y_true: List[Tuple[float, float, float, float]], verbose: bool = True) -> float:

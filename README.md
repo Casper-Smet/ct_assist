@@ -12,12 +12,12 @@ This repo extends [CameraTransform](https://github.com/rgerum/cameratransform)'s
 We provide a Anaconda environment file `[env.yaml]` for installing this repo's dependencies. 
 
 
-1. `git clone https://github.com/Casper-Smet/AssistanceTransform.git`
-2. `cd .\AssistanceTransform\`
+1. `git clone https://github.com/Casper-Smet/ct_assist.git`
+2. `cd .\ct_assist\`
 3. `conda env create -f env.yml`
-4. `conda activate AssistanceTransform`
+4. `conda activate ct_assist`
    
-AssistanceTransform currently does not support installing through PIP or Anaconda. This will be implemented in a future release.
+ct_assist currently does not support installing through PIP or Anaconda. This will be implemented in a future release.
 # **!!** Please note that `env.yml` assumes CUDA compatible hardware **!!**
 
 ## More about EU-Project ASSISTANCE
