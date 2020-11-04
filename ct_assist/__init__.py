@@ -12,3 +12,5 @@ reference_detection contains functions for finding head-feet pairs on images, us
 
 from . import transform
 from . import reference_detection
+
+__all__ = ['transform', "reference_detection"]

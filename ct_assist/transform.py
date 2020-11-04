@@ -47,7 +47,7 @@ def fit_transform(img: Image.Image, reference: np.ndarray, height: np.ndarray, S
         raise TypeError(f"Expected `image_coords` to be of type np.ndarray, not {type(image_coords)}")
     if not isinstance(z, (float, np.ndarray)):
         raise TypeError(f"Expected `z` to be of type float|np.ndarray, not {type(z)}")
-    
+
     cam = fit(img=img, reference=reference, height=height, STD=STD,
               meta_data=meta_data, iters=iters, verbose=verbose, seed=seed)
 
@@ -136,7 +136,7 @@ def fit(img: Image.Image, reference: np.ndarray, height: np.ndarray, STD: int, m
         points_head=reference[0], points_feet=reference[1], height=height, variation=STD)
 
     # Fit for all spatial parameters
-    trace = cam.metropolis([
+    cam.metropolis([
         ct.FitParameter("elevation_m", lower=0,
                         upper=200, value=2),
         ct.FitParameter("tilt_deg", lower=0, upper=180, value=80),

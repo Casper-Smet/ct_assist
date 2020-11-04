@@ -26,7 +26,10 @@ def camera_properties(X_test: List[dict], Y_true: List[Tuple[float, float, float
     Y_pred = np.array(Y_pred)
     Y_true = np.array(Y_true)
 
-    return mean_squared_error(Y_true[:, 0], Y_pred[:, 0], squared=False), mean_squared_error(Y_true[:, 1], Y_pred[:, 1], squared=False), mean_squared_error(Y_true[:, 2], Y_pred[:, 2], squared=False), mean_squared_error(Y_true[:, 3], Y_pred[:, 3], squared=False)
+    return (mean_squared_error(Y_true[:, 0], Y_pred[:, 0], squared=False),
+            mean_squared_error(Y_true[:, 1], Y_pred[:, 1], squared=False),
+            mean_squared_error(Y_true[:, 2], Y_pred[:, 2], squared=False),
+            mean_squared_error(Y_true[:, 3], Y_pred[:, 3], squared=False))
 
 
 def area(X_test: List[dict], y_true: List[float], verbose: bool = True) -> float:

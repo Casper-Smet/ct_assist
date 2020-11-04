@@ -1,6 +1,7 @@
 """Reference Detection
 
-This module contains the functions necessary to extract head-feet pairs from images, load Detectron2 models, and parse the detectron2 output.
+This module contains the functions necessary to extract head-feet pairs from images, load Detectron2 models, and parse the detectron2 outpu\
+t.
 
 Use `get_heads_feet` to extract a head-feet pair from a single instance/binary mask.
 
