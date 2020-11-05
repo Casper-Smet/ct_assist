@@ -59,7 +59,14 @@ def load_model(model_url: str = "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x
     cfg.merge_from_file(model_zoo.get_config_file(model_url))
     cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = threshold
     cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url(model_url)
-    predictor = DefaultPredictor(cfg)
+    try:
+        predictor = DefaultPredictor(cfg)
+    except AssertionError as a:
+        if "NVIDIA driver" in str(a):
+            cfg.MODEL.DEVICE = "cpu"
+            predictor = DefaultPredictor(cfg)
+        else:
+            raise a
     if return_cfg:
         return predictor, cfg
     else:
