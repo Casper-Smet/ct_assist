@@ -28,7 +28,7 @@ def setup_vars():
     height = 0.095  # m
     STD = 0.01  # m
     img = Image.open(
-        "D:\\University\\2020-2021\\Internship\\ct_assist\\notebooks\\data\\table\\img_03.jpg")
+        r"./notebooks/data/table/img_03.jpg")
 
     image_coords = np.array(
         [[1216, 1398], [2215, 1754], [3268, 1530], [2067, 1282]])
