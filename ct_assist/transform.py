@@ -18,7 +18,7 @@ from ct_assist.exceptions import DimensionError, MissingExifError
 
 
 def fit_transform(img: Image.Image, reference: np.ndarray, height: np.ndarray, STD: int, image_coords: np.ndarray,
-                  meta_data: dict = None, z: float = 0.0, iters=1e4, verbose=False, seed: int = None, *args, **kwargs) -> np.ndarray:
+                  meta_data: dict = None, z: float = 0.0, iters=1e4, verbose=False, seed: int = None, multi: bool = False, *args, **kwargs) -> np.ndarray:
     """Function composition for transforming image-coordinates to real-world coordinates
     using the other functions declared in transform.py.
 
@@ -39,25 +39,30 @@ def fit_transform(img: Image.Image, reference: np.ndarray, height: np.ndarray, S
     :type verbose: bool
     :param seed: Random seed to be passed to numpy.random.seed (not recommended)
     :type seed: int
+    :param multi: If multiple object types are passed, changes STD, height, and reference shapes and types, defauls to False
+    :type multi: bool
     :return: image_coords transformed to real-world coordinates
     :rtype: np.ndarray
     """
     # TODO: Test for types `seed`, `verbose`, `iters`
-    if not isinstance(image_coords, np.ndarray):
+    if not isinstance(image_coords, (np.ndarray)):
         raise TypeError(f"Expected `image_coords` to be of type np.ndarray, not {type(image_coords)}")
     if not isinstance(z, (float, np.ndarray)):
         raise TypeError(f"Expected `z` to be of type float|np.ndarray, not {type(z)}")
 
     cam = fit(img=img, reference=reference, height=height, STD=STD,
-              meta_data=meta_data, iters=iters, verbose=verbose, seed=seed)
+              meta_data=meta_data, iters=iters, verbose=verbose, seed=seed, multi=multi)
 
-    real_pos = cam.spaceFromImage(points=image_coords, Z=z)
+    if isinstance(image_coords, list):
+        real_pos = [cam.spaceFromImage(points=x) for x in image_coords]
+    else:
+        real_pos = cam.spaceFromImage(points=image_coords, Z=z)
 
     return real_pos
 
 
 def fit(img: Image.Image, reference: np.ndarray, height: np.ndarray, STD: int, meta_data: dict = None, iters=1e4, verbose=False,
-        seed: int = None, *args, **kwargs) -> ct.Camera:
+        seed: int = None, multi: bool = False, *args, **kwargs) -> ct.Camera:
     """Creates a trained CameraTransform.Camera object. See "https://cameratransform.readthedocs.io/en/latest/camera.html".
 
     :param img: Photograph in PIL image format
@@ -76,6 +81,8 @@ def fit(img: Image.Image, reference: np.ndarray, height: np.ndarray, STD: int, m
     :type verbose: bool
     :param seed: Random seed to be passed to numpy.random.seed (not recommended)
     :type seed: int
+    :param multi: If multiple object types are passed, changes STD, height, and reference shapes and types, defauls to False
+    :type multi: bool
     :return: image_coords transformed to real-world coordinates
     :rtype: np.ndarray
     """
@@ -85,22 +92,26 @@ def fit(img: Image.Image, reference: np.ndarray, height: np.ndarray, STD: int, m
         raise TypeError(
             f"Expected `img` to be PIL.Image.Image, not {type(img)}")
 
-    # Check if reference is a np.ndarray
-    if not isinstance(reference, np.ndarray):
-        raise TypeError(
-            f"Expected `reference` to be np.ndarray, not {type(reference)}")
-    # Check dimensionality of reference
-    if reference.shape[0] != 2 or reference.shape[2] != 2:
-        raise DimensionError(
-            f"Expected `reference` with dimension (2, n, 2), not {reference.shape}")
+    if not multi:
+        # Check if reference is a np.ndarray
+        if not isinstance(reference, np.ndarray):
+            raise TypeError(
+                f"Expected `reference` to be np.ndarray, not {type(reference)}")
+        # Check dimensionality of reference
+        if reference.shape[0] != 2 or reference.shape[2] != 2:
+            raise DimensionError(
+                f"Expected `reference` with dimension (2, n, 2), not {reference.shape}")
+    else:
+        if not isinstance(reference, list):
+            raise TypeError(f"Expected `reference` to be a list, not {type(reference)}")
 
     # Check if height is int or float or np.ndarray
-    if not isinstance(height, (int, float, np.ndarray)):
+    if not isinstance(height, (int, float, np.ndarray, list)):
         raise TypeError(
             f"Expected `height` to be np.ndarray or float, not {type(height)}")
 
     # Check if STD is int or float or np.ndarray
-    if not isinstance(STD, (int, float, np.ndarray)):
+    if not isinstance(STD, (int, float, np.ndarray, list)):
         raise TypeError(
             f"Expected `STD` to be np.ndarray or float, not {type(STD)}")
 
@@ -132,8 +143,14 @@ def fit(img: Image.Image, reference: np.ndarray, height: np.ndarray, STD: int, m
     cam = ct.Camera(projection=proj)
 
     # Add objects to Camera
-    cam.addObjectHeightInformation(
-        points_head=reference[0], points_feet=reference[1], height=height, variation=STD)
+    if multi:
+        for ref, h, std in zip(reference, height, STD):
+            # print(ref, type(h), type(std))
+            cam.addObjectHeightInformation(points_head=ref[0], points_feet=ref[1], height=h, variation=std)
+            # break
+    else:
+        cam.addObjectHeightInformation(
+            points_head=reference[0], points_feet=reference[1], height=height, variation=STD)
 
     # Fit for all spatial parameters
     cam.metropolis([
@@ -144,7 +161,11 @@ def fit(img: Image.Image, reference: np.ndarray, height: np.ndarray, STD: int, m
         ct.FitParameter("roll_deg", lower=-180, upper=180, value=0)
     ], iterations=iters, print_trace=verbose, disable_bar=not verbose)
 
-    return cam
+    params = cam.orientation.parameters
+    if (-180 <= params.roll_deg <= 180) and (-180 <= params.tilt_deg <= 180) and (-180 <= params.heading_deg <= 180) and (0 <= params.elevation_m <= 200):
+        return cam
+    else:
+        return fit(img=img, reference=reference, height=height, STD=STD, multi=multi, meta_data={"focal_length": f, "sensor_size": sensor_size, "image_size": image_size})
 
 
 def get_Exif(img: Image.Image) -> Tuple[float, Tuple[int, int], Tuple[float, float]]:
