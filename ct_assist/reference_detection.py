@@ -33,7 +33,6 @@ from detectron2.structures import Instances
 
 from ct_assist.exceptions import SkipFieldWarning
 
-warnings.simplefilter("always", SkipFieldWarning)
 
 HEIGHT_DICT: dict = {"truck": (3, 1),
                      "person": (1.741, 0.05),
@@ -148,7 +147,7 @@ def get_heads_feet(mask: torch.tensor, step_size=5, offset=0.1) -> np.ndarray:
 
 
 def extract_reference(objects: dict, step_size: int = 10, offset: float = 0.1,
-                      height_dict: dict = HEIGHT_DICT) -> List[Tuple[np.ndarray, float, float]]:
+                      height_dict: dict = HEIGHT_DICT, always_warn: bool = True) -> List[Tuple[np.ndarray, float, float]]:
     """Extracts references from dictionary filled with predictions.
 
     See instances_to_dict for objects' format. The output is based on the output for get_heads_feet.
@@ -157,11 +156,16 @@ def extract_reference(objects: dict, step_size: int = 10, offset: float = 0.1,
     :type objects: dict
     :param step_size: How many pixels to skip, defaults to 10
     :type step_size: int, optional
-    :param offset: Minimum size relative to median distance between heads and feet, defaults to 0.9
+    :param offset: Minimum size relative to median distance between heads and feet, defaults to 0.1
     :type offset: float, optional
+    :param height_dict: dictionary mapping object-type to height, defualts to HEIGHT_DICT
+    :type height_dict: dictionary
+    :param always_warn: If SkipFieldWarning should always be thrown
     :return: [(reference, height, STD)]
     :rtype: List[Tuple[np.ndarray, float, float]]
     """
+    if always_warn:
+        warnings.simplefilter("always", SkipFieldWarning)
     args = []
     for key, masks in objects.items():
         try:
