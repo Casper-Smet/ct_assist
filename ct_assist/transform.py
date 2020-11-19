@@ -45,7 +45,7 @@ def fit_transform(img: Image.Image, reference: np.ndarray, height: np.ndarray, S
     :rtype: np.ndarray
     """
     # TODO: Test for types `seed`, `verbose`, `iters`
-    if not isinstance(image_coords, (np.ndarray)):
+    if not isinstance(image_coords, (np.ndarray, list)):
         raise TypeError(f"Expected `image_coords` to be of type np.ndarray, not {type(image_coords)}")
     if not isinstance(z, (float, np.ndarray)):
         raise TypeError(f"Expected `z` to be of type float|np.ndarray, not {type(z)}")
