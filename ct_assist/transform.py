@@ -9,6 +9,7 @@ This module is a work in progress.
 
 from numbers import Rational
 from typing import Tuple
+from warnings import warn
 
 import cameratransform as ct
 import numpy as np
@@ -46,9 +47,11 @@ def fit_transform(img: Image.Image, reference: np.ndarray, height: np.ndarray, S
     """
     # TODO: Test for types `seed`, `verbose`, `iters`
     if not isinstance(image_coords, (np.ndarray, list)):
-        raise TypeError(f"Expected `image_coords` to be of type np.ndarray, not {type(image_coords)}")
+        raise TypeError(
+            f"Expected `image_coords` to be of type np.ndarray, not {type(image_coords)}")
     if not isinstance(z, (float, np.ndarray)):
-        raise TypeError(f"Expected `z` to be of type float|np.ndarray, not {type(z)}")
+        raise TypeError(
+            f"Expected `z` to be of type float|np.ndarray, not {type(z)}")
 
     cam = fit(img=img, reference=reference, height=height, STD=STD,
               meta_data=meta_data, iters=iters, verbose=verbose, seed=seed, multi=multi)
@@ -103,7 +106,8 @@ def fit(img: Image.Image, reference: np.ndarray, height: np.ndarray, STD: int, m
                 f"Expected `reference` with dimension (2, n, 2), not {reference.shape}")
     else:
         if not isinstance(reference, list):
-            raise TypeError(f"Expected `reference` to be a list, not {type(reference)}")
+            raise TypeError(
+                f"Expected `reference` to be a list, not {type(reference)}")
 
     # Check if height is int or float or np.ndarray
     if not isinstance(height, (int, float, np.ndarray, list)):
@@ -144,11 +148,12 @@ def fit(img: Image.Image, reference: np.ndarray, height: np.ndarray, STD: int, m
 
     # Add objects to Camera
     if multi:
+        # If multiple object types are available, loop through `reference`, `height` and `STD`
         for ref, h, std in zip(reference, height, STD):
-            # print(ref, type(h), type(std))
-            cam.addObjectHeightInformation(points_head=ref[0], points_feet=ref[1], height=h, variation=std)
-            # break
+            cam.addObjectHeightInformation(
+                points_head=ref[0], points_feet=ref[1], height=h, variation=std)
     else:
+        # Else, then single object type, pass `reference`, `height` and `STD` regularly
         cam.addObjectHeightInformation(
             points_head=reference[0], points_feet=reference[1], height=height, variation=STD)
 
@@ -162,10 +167,12 @@ def fit(img: Image.Image, reference: np.ndarray, height: np.ndarray, STD: int, m
     ], iterations=iters, print_trace=verbose, disable_bar=not verbose)
 
     params = cam.orientation.parameters
-    if (-180 <= params.roll_deg <= 180) and (-180 <= params.tilt_deg <= 180) and (-180 <= params.heading_deg <= 180) and (0 <= params.elevation_m <= 200):
+    if (-180 <= params.roll_deg <= 180) and (-180 <= params.tilt_deg <= 180) and\
+       (-180 <= params.heading_deg <= 180) and (0 <= params.elevation_m <= 200):
         return cam
     else:
-        return fit(img=img, reference=reference, height=height, STD=STD, multi=multi, meta_data={"focal_length": f, "sensor_size": sensor_size, "image_size": image_size})
+        return fit(img=img, reference=reference, height=height, STD=STD, multi=multi,
+                   meta_data={"focal_length": f, "sensor_size": sensor_size, "image_size": image_size})
 
 
 def get_Exif(img: Image.Image) -> Tuple[float, Tuple[int, int], Tuple[float, float]]:
@@ -292,6 +299,7 @@ def sensor_size_look_up(model_name: str):
     :param model_name: Model name
     :type model_name: str
     """
+    # TODO: Add 4gbodycam
     table = {
         "iPhone SE": (4.8, 3.6),
         "iPhone 11": (5.76, 4.29),  # Approx
