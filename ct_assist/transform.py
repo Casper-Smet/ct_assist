@@ -124,8 +124,10 @@ def fit(img: Image.Image, reference: np.ndarray, height: np.ndarray, STD: int, m
         if not isinstance(meta_data, dict):
             raise TypeError(
                 f"Expected `meta_data` to be of type dict, got {type(meta_data)} instead")
-        f, image_size, sensor_size = meta_data.get("focal_length"), meta_data.get(
-            "image_size"), meta_data.get("sensor_size")
+        f = meta_data.get("focal_length")  # Focal length
+        image_size = meta_data.get("image_size")  # Image size
+        sensor_size = meta_data.get("sensor_size")  # Sensor size
+        
         if (not isinstance(f, (int, float))) or (not isinstance(image_size, tuple)) or (not isinstance(sensor_size, tuple)):
             raise ValueError(f"Metadata incorrect, check typing: {meta_data}")
     else:
@@ -166,11 +168,15 @@ def fit(img: Image.Image, reference: np.ndarray, height: np.ndarray, STD: int, m
         ct.FitParameter("roll_deg", lower=-180, upper=180, value=0)
     ], iterations=iters, print_trace=verbose, disable_bar=not verbose)
 
+    # In some edge cases, the roll, tilt, heading, or elevation may be outside of its bounds.
+    # In this case, the algorithm is rerun.
     params = cam.orientation.parameters
     if (-180 <= params.roll_deg <= 180) and (-180 <= params.tilt_deg <= 180) and\
        (-180 <= params.heading_deg <= 180) and (0 <= params.elevation_m <= 200):
+        # If all parameters are in bounds, return cam
         return cam
     else:
+        # If not, rerun
         return fit(img=img, reference=reference, height=height, STD=STD, multi=multi,
                    meta_data={"focal_length": f, "sensor_size": sensor_size, "image_size": image_size})
 
@@ -299,7 +305,7 @@ def sensor_size_look_up(model_name: str):
     :param model_name: Model name
     :type model_name: str
     """
-    # TODO: Add 4gbodycam
+    # TODO: Add 4g-bodycam
     table = {
         "iPhone SE": (4.8, 3.6),
         "iPhone 11": (5.76, 4.29),  # Approx
