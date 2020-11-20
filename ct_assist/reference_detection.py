@@ -114,11 +114,11 @@ def get_heads_feet(mask: torch.tensor, step_size=5, offset=0.1) -> np.ndarray:
     """
     head, feet = [], []
     # Get all points where point == 1 (mask)
-    mask_points = torch.nonzero(mask)  # .nonzero()
+    mask_points = torch.nonzero(mask, as_tuple=False)  # .nonzero()
     # For each unique value for the x-plane
     for x in torch.unique(mask_points[..., 1]):
         # Get the indices at which mask[:, x] == x
-        index = torch.nonzero(mask_points.T[1] == x)  # .nonzero()
+        index = torch.nonzero(mask_points.T[1] == x, as_tuple=False)  # .nonzero()
         # Get all values for y where mask[:, x] == x
         ys = mask_points[index, 0]
         # Get max and min y, cast to CPU
