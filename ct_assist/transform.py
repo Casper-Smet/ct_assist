@@ -159,6 +159,7 @@ def fit(img: Image.Image, reference: np.ndarray, height: np.ndarray, STD: int, m
         cam.addObjectHeightInformation(
             points_head=reference[0], points_feet=reference[1], height=height, variation=STD)
 
+    # TODO: Consider running this multiple times in parallel, then taking the average. (multiple markov chain)
     # Fit for all spatial parameters
     cam.metropolis([
         ct.FitParameter("elevation_m", lower=0,
@@ -167,7 +168,6 @@ def fit(img: Image.Image, reference: np.ndarray, height: np.ndarray, STD: int, m
         ct.FitParameter("heading_deg", lower=-180, upper=180, value=-77),
         ct.FitParameter("roll_deg", lower=-180, upper=180, value=0)
     ], iterations=iters, print_trace=verbose, disable_bar=not verbose)
-
 
     # TODO: Consider changing this to maximum-minimum values instead of re-running.
     # In some edge cases, the roll, tilt, heading, or elevation may be outside of its bounds.
