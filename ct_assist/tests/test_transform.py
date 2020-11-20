@@ -138,6 +138,8 @@ def test_fit_transform(monkeypatch):
 
         # Wrong type for image_coords
         for img_coords in type_mistakes:
+            if isinstance(img_coords, list):
+                continue
             with pytest.raises(TypeError, match=f"Expected `image_coords` to be of type np.ndarray, not {type(img_coords)}"):
                 transform.fit_transform(
                     img=img, reference=np.array([np.array([[1, 1]]), np.array([[1, 1]])]), height=1.0, STD=1, image_coords=img_coords)
