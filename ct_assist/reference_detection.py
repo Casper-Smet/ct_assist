@@ -1,6 +1,7 @@
 """Reference Detection
 
-This module contains the functions necessary to extract head-feet pairs from images, load Detectron2 models, and parse the detectron2 output.
+This module contains the functions necessary to extract head-feet pairs from images, load Detectron2 models, and parse the detectron2 outpu\
+t.
 
 Use `get_heads_feet` to extract a head-feet pair from a single instance/binary mask.
 
@@ -30,13 +31,12 @@ from detectron2.config import get_cfg
 from detectron2.engine import DefaultPredictor
 from detectron2.structures import Instances
 
-from AssistanceTransform.exceptions import SkipFieldWarning
+from ct_assist.exceptions import SkipFieldWarning
 
-warnings.simplefilter("always", SkipFieldWarning)
 
-const_height_dict: dict = {"truck": (3, 1),
-                           "person": (1.741, 0.05),
-                           "car": (1.425, 0.0247)}
+HEIGHT_DICT: dict = {"truck": (3, 1),
+                     "person": (1.741, 0.05),
+                     "car": (1.425, 0.0247)}
 
 # TODO: Move to util file
 
@@ -58,7 +58,14 @@ def load_model(model_url: str = "COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x
     cfg.merge_from_file(model_zoo.get_config_file(model_url))
     cfg.MODEL.ROI_HEADS.SCORE_THRESH_TEST = threshold
     cfg.MODEL.WEIGHTS = model_zoo.get_checkpoint_url(model_url)
-    predictor = DefaultPredictor(cfg)
+    try:
+        predictor = DefaultPredictor(cfg)
+    except AssertionError as a:
+        if "NVIDIA driver" in str(a):
+            cfg.MODEL.DEVICE = "cpu"
+            predictor = DefaultPredictor(cfg)
+        else:
+            raise a
     if return_cfg:
         return predictor, cfg
     else:
@@ -107,11 +114,11 @@ def get_heads_feet(mask: torch.tensor, step_size=5, offset=0.1) -> np.ndarray:
     """
     head, feet = [], []
     # Get all points where point == 1 (mask)
-    mask_points = torch.nonzero(mask)  # .nonzero()
+    mask_points = torch.nonzero(mask, as_tuple=False)  # .nonzero()
     # For each unique value for the x-plane
     for x in torch.unique(mask_points[..., 1]):
         # Get the indices at which mask[:, x] == x
-        index = torch.nonzero(mask_points.T[1] == x)  # .nonzero()
+        index = torch.nonzero(mask_points.T[1] == x, as_tuple=False)  # .nonzero()
         # Get all values for y where mask[:, x] == x
         ys = mask_points[index, 0]
         # Get max and min y, cast to CPU
@@ -140,7 +147,7 @@ def get_heads_feet(mask: torch.tensor, step_size=5, offset=0.1) -> np.ndarray:
 
 
 def extract_reference(objects: dict, step_size: int = 10, offset: float = 0.1,
-                      height_dict: dict = const_height_dict) -> List[Tuple[np.ndarray, float, float]]:
+                      height_dict: dict = HEIGHT_DICT, always_warn: bool = True) -> List[Tuple[np.ndarray, float, float]]:
     """Extracts references from dictionary filled with predictions.
 
     See instances_to_dict for objects' format. The output is based on the output for get_heads_feet.
@@ -149,11 +156,16 @@ def extract_reference(objects: dict, step_size: int = 10, offset: float = 0.1,
     :type objects: dict
     :param step_size: How many pixels to skip, defaults to 10
     :type step_size: int, optional
-    :param offset: Minimum size relative to median distance between heads and feet, defaults to 0.9
+    :param offset: Minimum size relative to median distance between heads and feet, defaults to 0.1
     :type offset: float, optional
+    :param height_dict: dictionary mapping object-type to height, defualts to HEIGHT_DICT
+    :type height_dict: dictionary
+    :param always_warn: If SkipFieldWarning should always be thrown
     :return: [(reference, height, STD)]
     :rtype: List[Tuple[np.ndarray, float, float]]
     """
+    if always_warn:
+        warnings.simplefilter("always", SkipFieldWarning)
     args = []
     for key, masks in objects.items():
         try:

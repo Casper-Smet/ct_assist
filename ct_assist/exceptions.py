@@ -1,6 +1,3 @@
-from warnings import WarningMessage
-
-
 class MissingExifError(Exception):
     pass
 

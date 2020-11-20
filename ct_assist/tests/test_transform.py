@@ -4,8 +4,8 @@ import re
 
 import numpy as np
 import pytest
-from AssistanceTransform import transform
-from AssistanceTransform.exceptions import DimensionError, MissingExifError
+from ct_assist import transform
+from ct_assist.exceptions import DimensionError, MissingExifError
 from PIL import Image
 
 
@@ -22,13 +22,13 @@ def setup_vars():
                            "feet": arrs[f"{prefix}feet"]}
                      for img, prefix in mappings.items()}
 
-    annotations = anno_dict["D:\\University\\2020-2021\\Internship\\AssistanceTransform\\notebooks\\data\\table\\img_03.jpg"]
+    annotations = anno_dict["D:\\University\\2020-2021\\Internship\\ct_assist\\notebooks\\data\\table\\img_03.jpg"]
     # feet and heads have been swapped in annotations
     reference = np.array([annotations["feet"], annotations["heads"]])
     height = 0.095  # m
     STD = 0.01  # m
     img = Image.open(
-        "D:\\University\\2020-2021\\Internship\\AssistanceTransform\\notebooks\\data\\table\\img_03.jpg")
+        r"./notebooks/data/table/img_03.jpg")
 
     image_coords = np.array(
         [[1216, 1398], [2215, 1754], [3268, 1530], [2067, 1282]])
@@ -55,7 +55,7 @@ def test_fit_transform(monkeypatch):
     #  Test if transformed_points equal real_points
     transformed_points = transform.fit_transform(*params, iters=1e4, seed=0)
     # This test really doesn't say much for the accuracy, it is only useful for consistency testing
-    # assert np.allclose(real_points, transformed_points)  # Not needed
+    assert np.allclose(real_points, transformed_points)  # Not needed
 
     # Passing meta data through dict
     meta_data = {"focal_length": 3.99, "image_size": (
@@ -65,6 +65,10 @@ def test_fit_transform(monkeypatch):
         *params, meta_data=meta_data, iters=1e4, seed=0)
     # This test really doesn't say much for the accuracy, it is only useful for consistency testing
     assert np.allclose(real_points, transformed_points)
+
+    multi_params = [[p] for p in params[1:]]
+    transformed_points = transform.fit_transform(
+        params[0], *multi_params, meta_data=meta_data, iters=1e4, seed=0, multi=True)
 
     type_mistakes = ["str", 0, [0, 1]]
     # Wrong type for meta_data
@@ -91,7 +95,6 @@ def test_fit_transform(monkeypatch):
         transform.fit_transform(*params, meta_data=_meta_data)
 
     img = Image.new("RGB", (30, 30), color="red")
-
     # Check `reference` dimensions
     with pytest.raises(DimensionError,
                        match=re.escape(f"Expected `reference` with dimension (2, n, 2), not {np.array([np.array([[1]]), ]).shape}")):
@@ -113,35 +116,41 @@ def test_fit_transform(monkeypatch):
         for reference in type_mistakes:
             with pytest.raises(TypeError, match=f"Expected `reference` to be np.ndarray, not {type(reference)}"):
                 transform.fit_transform(
-                    img, reference, 1.0, 1, np.array([1]))
+                    img=img, reference=reference, height=1.0, STD=1, image_coords=np.array([1]))
+            if not isinstance(reference, list):
+                with pytest.raises(TypeError, match=f"Expected `reference` to be a list, not {type(reference)}"):
+                    transform.fit_transform(
+                        img=img, reference=reference, height=1.0, STD=1, image_coords=np.array([1]), multi=True)
 
         # Wrong type for height
         for height in type_mistakes:
-            if height == 0:
+            if isinstance(height, (list, int)):
                 continue
             with pytest.raises(TypeError, match="Expected `height` to be np.ndarray or float"):
                 transform.fit_transform(
-                    img, np.array([np.array([[1, 1]]), np.array([[1, 1]])]), height, 1, np.array([1]))
+                    img=img, reference=np.array([np.array([[1, 1]]), np.array([[1, 1]])]), height=height, STD=1, image_coords=np.array([1]))
 
         # Wrong type for STD
         for STD in type_mistakes:
-            if STD == 0:
+            if isinstance(STD, (int, list)):
                 continue
             with pytest.raises(TypeError, match="Expected `STD` to be np.ndarray or float"):
                 transform.fit_transform(
-                    img, np.array([np.array([[1, 1]]), np.array([[1, 1]])]), 1.0, STD, np.array([1]))
+                    img=img, reference=np.array([np.array([[1, 1]]), np.array([[1, 1]])]), height=1.0, STD=STD, image_coords=np.array([1]))
 
         # Wrong type for z
         for z in type_mistakes:
             with pytest.raises(TypeError, match=f"Expected `z` to be of type float|np.ndarray, not {type(z)}"):
                 transform.fit_transform(
-                    img, (np.array([1]), np.array([1])), 1.0, 1, np.array([1]), z=z)
+                    img=img, reference=np.array([np.array([[1, 1]]), np.array([[1, 1]])]), height=1.0, STD=1, image_coords=np.array([1]), z=z)
 
         # Wrong type for image_coords
         for img_coords in type_mistakes:
+            if isinstance(img_coords, list):
+                continue
             with pytest.raises(TypeError, match=f"Expected `image_coords` to be of type np.ndarray, not {type(img_coords)}"):
                 transform.fit_transform(
-                    img, (np.array([1]), np.array([1])), 1.0, 1, image_coords=img_coords)
+                    img=img, reference=np.array([np.array([[1, 1]]), np.array([[1, 1]])]), height=1.0, STD=1, image_coords=img_coords)
 
 
 def test_fit(monkeypatch):
@@ -214,19 +223,19 @@ def test_fit(monkeypatch):
 
         # Wrong type for height
         for height in type_mistakes:
-            if height == 0:
+            if isinstance(height, (list, int)):
                 continue
             with pytest.raises(TypeError, match="Expected `height` to be np.ndarray or float"):
                 transform.fit(
-                    img, np.array([np.array([[1, 1]]), np.array([[1, 1]])]), height, 1, np.array([1]))
+                    img=img, reference=np.array([np.array([[1, 1]]), np.array([[1, 1]])]), height=height, STD=1, image_coords=np.array([1]))
 
         # Wrong type for STD
         for STD in type_mistakes:
-            if STD == 0:
+            if isinstance(STD, (list, int)):
                 continue
             with pytest.raises(TypeError, match="Expected `STD` to be np.ndarray or float"):
                 transform.fit(
-                    img, np.array([np.array([[1, 1]]), np.array([[1, 1]])]), 1.0, STD, np.array([1]))
+                    img=img, reference=np.array([np.array([[1, 1]]), np.array([[1, 1]])]), height=1.0, STD=STD, image_coords=np.array([1]))
 
 
 def test_get_Exif(monkeypatch):

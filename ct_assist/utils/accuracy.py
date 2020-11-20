@@ -4,7 +4,8 @@ import numpy as np
 from sklearn.metrics import mean_squared_error
 from tqdm import tqdm
 
-from AssistanceTransform import transform, estimator
+from ct_assist import transform
+from ct_assist.exceptions import DimensionError
 
 
 def camera_properties(X_test: List[dict], Y_true: List[Tuple[float, float, float, float]], verbose: bool = True) -> float:
@@ -26,7 +27,29 @@ def camera_properties(X_test: List[dict], Y_true: List[Tuple[float, float, float
     Y_pred = np.array(Y_pred)
     Y_true = np.array(Y_true)
 
-    return mean_squared_error(Y_true[:, 0], Y_pred[:, 0], squared=False), mean_squared_error(Y_true[:, 1], Y_pred[:, 1], squared=False), mean_squared_error(Y_true[:, 2], Y_pred[:, 2], squared=False), mean_squared_error(Y_true[:, 3], Y_pred[:, 3], squared=False)
+    return (mean_squared_error(Y_true[:, 0], Y_pred[:, 0], squared=False),
+            mean_squared_error(Y_true[:, 1], Y_pred[:, 1], squared=False),
+            mean_squared_error(Y_true[:, 2], Y_pred[:, 2], squared=False),
+            mean_squared_error(Y_true[:, 3], Y_pred[:, 3], squared=False)), Y_pred, Y_true
+
+
+def calc_area(poly: np.ndarray) -> float:
+    """Estimates the area of a polygon using the shoelace formula.
+
+    :param poly: Polygon
+    :type poly: Numpy array
+    :return: Area of polygon
+    :rtype: float
+    """
+    if not isinstance(poly, np.ndarray):
+        raise TypeError(f"Expected poly to be `np.ndarray`, not {type(poly)}")
+    if len(poly.shape) != 2:
+        raise DimensionError(f"Expected dimension (n, 2), not {poly.shape}")
+    if poly.shape[1] != 2:
+        raise DimensionError(f"Expected dimension (n, 2), not {poly.shape}")
+    x, y = poly.T
+    ar = 0.5 * np.abs(np.dot(x, np.roll(y, 1)) - np.dot(y, np.roll(x, 1)))
+    return ar if not np.isnan(ar).any() else 0
 
 
 def area(X_test: List[dict], y_true: List[float], verbose: bool = True) -> float:
@@ -41,6 +64,6 @@ def area(X_test: List[dict], y_true: List[float], verbose: bool = True) -> float
     :return: RMSE, Aka loss
     :rtype: float
     """
-    Y_pred = map(lambda params: estimator.area(
-        transform.fit_transform(**params)[:, :2]), tqdm(X_test))
-    return mean_squared_error(y_true, list(Y_pred), squared=False)
+    Y_pred = list(map(lambda params: sum(calc_area(
+        poly[:, :2]) for poly in transform.fit_transform(**params)), tqdm(X_test)))
+    return mean_squared_error(y_true, Y_pred, squared=False), Y_pred
