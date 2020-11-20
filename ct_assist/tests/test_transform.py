@@ -55,7 +55,7 @@ def test_fit_transform(monkeypatch):
     #  Test if transformed_points equal real_points
     transformed_points = transform.fit_transform(*params, iters=1e4, seed=0)
     # This test really doesn't say much for the accuracy, it is only useful for consistency testing
-    # assert np.allclose(real_points, transformed_points)  # Not needed
+    assert np.allclose(real_points, transformed_points)  # Not needed
 
     # Passing meta data through dict
     meta_data = {"focal_length": 3.99, "image_size": (
@@ -65,6 +65,10 @@ def test_fit_transform(monkeypatch):
         *params, meta_data=meta_data, iters=1e4, seed=0)
     # This test really doesn't say much for the accuracy, it is only useful for consistency testing
     assert np.allclose(real_points, transformed_points)
+
+    multi_params = [[p] for p in params[1:]]
+    transformed_points = transform.fit_transform(
+        params[0], *multi_params, meta_data=meta_data, iters=1e4, seed=0, multi=True)
 
     type_mistakes = ["str", 0, [0, 1]]
     # Wrong type for meta_data
@@ -113,6 +117,10 @@ def test_fit_transform(monkeypatch):
             with pytest.raises(TypeError, match=f"Expected `reference` to be np.ndarray, not {type(reference)}"):
                 transform.fit_transform(
                     img=img, reference=reference, height=1.0, STD=1, image_coords=np.array([1]))
+            if not isinstance(reference, list):
+                with pytest.raises(TypeError, match=f"Expected `reference` to be a list, not {type(reference)}"):
+                    transform.fit_transform(
+                        img=img, reference=reference, height=1.0, STD=1, image_coords=np.array([1]), multi=True)
 
         # Wrong type for height
         for height in type_mistakes:
