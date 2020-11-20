@@ -32,6 +32,7 @@ def camera_properties(X_test: List[dict], Y_true: List[Tuple[float, float, float
             mean_squared_error(Y_true[:, 2], Y_pred[:, 2], squared=False),
             mean_squared_error(Y_true[:, 3], Y_pred[:, 3], squared=False)), Y_pred, Y_true
 
+
 def calc_area(poly: np.ndarray) -> float:
     """Estimates the area of a polygon using the shoelace formula.
 
@@ -50,6 +51,7 @@ def calc_area(poly: np.ndarray) -> float:
     ar = 0.5 * np.abs(np.dot(x, np.roll(y, 1)) - np.dot(y, np.roll(x, 1)))
     return ar if not np.isnan(ar).any() else 0
 
+
 def area(X_test: List[dict], y_true: List[float], verbose: bool = True) -> float:
     """Accuracy test for area.
 
@@ -62,5 +64,6 @@ def area(X_test: List[dict], y_true: List[float], verbose: bool = True) -> float
     :return: RMSE, Aka loss
     :rtype: float
     """
-    Y_pred = list(map(lambda params: sum(calc_area(poly[:, :2]) for poly in transform.fit_transform(**params)), tqdm(X_test)))
+    Y_pred = list(map(lambda params: sum(calc_area(
+        poly[:, :2]) for poly in transform.fit_transform(**params)), tqdm(X_test)))
     return mean_squared_error(y_true, Y_pred, squared=False), Y_pred
