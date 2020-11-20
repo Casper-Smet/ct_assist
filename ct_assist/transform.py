@@ -127,7 +127,7 @@ def fit(img: Image.Image, reference: np.ndarray, height: np.ndarray, STD: int, m
         f = meta_data.get("focal_length")  # Focal length
         image_size = meta_data.get("image_size")  # Image size
         sensor_size = meta_data.get("sensor_size")  # Sensor size
-        
+
         if (not isinstance(f, (int, float))) or (not isinstance(image_size, tuple)) or (not isinstance(sensor_size, tuple)):
             raise ValueError(f"Metadata incorrect, check typing: {meta_data}")
     else:
@@ -168,6 +168,8 @@ def fit(img: Image.Image, reference: np.ndarray, height: np.ndarray, STD: int, m
         ct.FitParameter("roll_deg", lower=-180, upper=180, value=0)
     ], iterations=iters, print_trace=verbose, disable_bar=not verbose)
 
+
+    # TODO: Consider changing this to maximum-minimum values instead of re-running.
     # In some edge cases, the roll, tilt, heading, or elevation may be outside of its bounds.
     # In this case, the algorithm is rerun.
     params = cam.orientation.parameters
