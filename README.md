@@ -1,5 +1,5 @@
 # CameraTransform-Assistance
-`ct_assist`, or CameraTransform-Assistance, is a library for finding head-feet pairs on images. This allows for further automisation of the [CameraTransform](https://github.com/rgerum/cameratransform). It extracts head-feet pairs from a binary mask generated using instance segmentation. This requires the user to input a pytorch tensor.
+`ct_assist`, or CameraTransform-Assistance, is a library for finding head-feet pairs on images. This allows for further automation of the [CameraTransform](https://github.com/rgerum/cameratransform). It extracts head-feet pairs from a binary mask generated using instance segmentation. This requires the user to input a pytorch tensor.
 
 This project was made for EU-Project ASSISTANCE. See below for more.
 
