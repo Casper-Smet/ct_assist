@@ -4,6 +4,9 @@ on:
   pull_request:
     branches:
     - main
+  push:
+    branches:
+      - main
 
 jobs:
   build-linux:
@@ -20,7 +23,7 @@ jobs:
     - name: Install dependencies
       run: |
         # $CONDA is an environment variable pointing to the root of the miniconda directory
-        $CONDA/bin/conda env update --file env .yml --name base
+        $CONDA/bin/conda env update --file env.yml --name base
     - name: Install library
       run: |
         pip install .
