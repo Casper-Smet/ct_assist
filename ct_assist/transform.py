@@ -9,7 +9,6 @@ This module is a work in progress.
 
 from numbers import Rational
 from typing import Tuple
-from warnings import warn
 
 import cameratransform as ct
 import numpy as np
@@ -19,7 +18,8 @@ from ct_assist.exceptions import DimensionError, MissingExifError
 
 
 def fit_transform(img: Image.Image, reference: np.ndarray, height: np.ndarray, STD: int, image_coords: np.ndarray,
-                  meta_data: dict = None, z: float = 0.0, iters=1e4, verbose=False, seed: int = None, multi: bool = False, *args, **kwargs) -> np.ndarray:
+                  meta_data: dict = None, z: float = 0.0, iters=1e4, verbose=False, seed: int = None,
+                  multi: bool = False, *args, **kwargs) -> np.ndarray:
     """Function composition for transforming image-coordinates to real-world coordinates
     using the other functions declared in transform.py.
 

@@ -142,7 +142,8 @@ def test_fit_transform(monkeypatch):
         for z in type_mistakes:
             with pytest.raises(TypeError, match=f"Expected `z` to be of type float|np.ndarray, not {type(z)}"):
                 transform.fit_transform(
-                    img=img, reference=np.array([np.array([[1, 1]]), np.array([[1, 1]])]), height=1.0, STD=1, image_coords=np.array([1]), z=z)
+                    img=img, reference=np.array([np.array([[1, 1]]), np.array([[1, 1]])]), height=1.0, STD=1, image_coords=np.array([1]),
+                    z=z)
 
         # Wrong type for image_coords
         for img_coords in type_mistakes:
@@ -162,9 +163,11 @@ def test_fit(monkeypatch):
         *params, seed=1).orientation.parameters
     pred_params = (orientation_parameters.roll_deg,
                    orientation_parameters.tilt_deg, orientation_parameters.heading_deg)
-    real_params = (1.0475075736599635,
-                   74.32266805581958,
-                   -77.54609982919105)
+    for param in pred_params:
+        assert -180 <= param <= 180, "Params must be within bounds"
+    # real_params = (1.0475075736599635,
+    #                74.32266805581958,
+    #                -77.54609982919105)
     # This test really doesn't say much for the accuracy, it is only useful for consistency testing
     # assert pred_params == real_params  # Doesn't work as intended
 
