@@ -3,7 +3,7 @@ name: Python Package using Conda
 on: 
   pull_request:
     branches:
-    - master
+      - master
   push:
     branches:
       - master
