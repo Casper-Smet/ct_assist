@@ -25,14 +25,14 @@ jobs:
         # $CONDA is an environment variable pointing to the root of the miniconda directory
         $CONDA/bin/conda env update --file env.yml --name base
     - name: activate conda
-      run: $CONDA/bin/conda
+      run: $CONDA/bin/conda activate
     - name: Install library
       run: |
         pip install .
     - name: Install sphinx
       run: |
-        $CONDA/bin/conda install -c anaconda sphinx
-        $CONDA/bin/conda install -c anaconda sphinx_rtd_theme
+        $CONDA/bin/conda install -c anaconda sphinx --name base
+        $CONDA/bin/conda install -c anaconda sphinx_rtd_theme -- name base
     # - name: Move to source directory
     #   run: cd srcdoc/
     - name: Sphinx build
