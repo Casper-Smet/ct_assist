@@ -31,11 +31,12 @@ jobs:
       run: |
         $CONDA/bin/conda install -c anaconda sphinx
         $CONDA/bin/conda install -c anaconda sphinx_rtd_theme
-    - name: Move to source directory
-      run: cd srcdoc/
+    # - name: Move to source directory
+    #   run: cd srcdoc/
     - name: Sphinx build
       run: |
-        make html
+        # make html
+        sphinx-build -b html srcdoc/source docs/
       # uses: ammaraskar/sphinx-action@0.4
       # with:
       #   docs-folder: "srcdoc/"
