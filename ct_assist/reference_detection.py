@@ -1,5 +1,4 @@
-"""Reference Detection
-
+"""
 This module contains the functions necessary to extract head-feet pairs from images, load Detectron2 models, and parse the detectron2 outpu\
 t.
 
@@ -7,16 +6,19 @@ Use `get_heads_feet` to extract a head-feet pair from a single instance/binary m
 
 Use `extract_reference` to extract a series of head-feet pairs from a single image.
 
-## Usage example:
-```
- # If you plan on using detectron2
- predictor, cfg = load_model()  # Basic COCO-trained mask-rcnn, threshold = 0.7
- preds = predictor(image)  # Your image here
- from detectron2.data import MetadataCatalog
- objects = instances_to_dict(preds, MetadataCatalog.get(cfg.DATASETS.TRAIN[0]).get("thing_classes"))
- reference = extract_reference(objects)  # These are the head-feet pairs!
+Usage example
+-----------------
+.. code-block:: python
 
-```
+    # If you plan on using detectron2
+    predictor, cfg = load_model()  # Basic COCO-trained mask-rcnn, threshold = 0.7
+    preds = predictor(image)  # Your image here
+    from detectron2.data import MetadataCatalog
+    objects = instances_to_dict(preds, MetadataCatalog.get(cfg.DATASETS.TRAIN[0]).get("thing_classes"))
+    reference = extract_reference(objects)  # These are the head-feet pairs!
+
+Functions
+---------------------
 """
 
 import warnings

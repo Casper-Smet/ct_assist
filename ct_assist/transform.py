@@ -1,10 +1,11 @@
 """
-Transform
-
 This module contains helper functions of fitting a cameratransform.Camera object and using it to transform image point to real-world points,
 and functions for extracting exif data, and estimating sensor size.
 
 This module is a work in progress.
+
+Functions
+-----------------------------------
 """
 
 from numbers import Rational
