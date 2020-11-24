@@ -30,7 +30,7 @@ jobs:
     - name: Install sphinx
       run: |
         $CONDA/bin/conda install -c anaconda sphinx --name base
-        $CONDA/bin/conda install -c anaconda sphinx_rtd_theme -- name base
+        $CONDA/bin/conda install -c anaconda sphinx_rtd_theme --name base
     # - name: Move to source directory
     #   run: cd srcdoc/
     - name: Sphinx build
