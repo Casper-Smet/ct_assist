@@ -31,6 +31,8 @@ jobs:
       run: |
         $CONDA/bin/conda install -c anaconda sphinx
         $CONDA/bin/conda install -c anaconda sphinx_rtd_theme
+    - name: Move to source directory
+      run: cd srcdoc/
     - name: Sphinx build
       run: |
         make html
