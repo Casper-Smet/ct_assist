@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="ct_assist",
-    version="1.0",
+    version="1.1",
     author="Casper Smet",
     author_email="casper.smet@gmail.com",
     description="Automatically finding head-feet pairs for CameraTransform",
