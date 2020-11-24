@@ -1,6 +1,7 @@
 """
 
-ct_assist, or CameraTransform-Assistance, is a Python package for finding reference objects (head-feet pairs) from images, and using them with CameraTransform.
+ct_assist, or CameraTransform-Assistance, is a Python package for finding reference objects (head-feet pairs) from images, and using them \
+with CameraTransform.
 
 This package was made for TNO and EU-project ASSISTANCE.
 
