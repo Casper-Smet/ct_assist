@@ -82,7 +82,11 @@
             
               <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul class="current">
-<li class="toctree-l1 current"><a class="current reference internal" href="#">reference_detection.py</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">reference_detection.py</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#usage-example">Usage example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#functions">Functions</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="transformation.html">transform.py</a></li>
 <li class="toctree-l1"><a class="reference internal" href="utils.html">utils</a></li>
 </ul>
@@ -149,8 +153,113 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="reference-detection-py">
-<h1>reference_detection.py<a class="headerlink" href="#reference-detection-py" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="module-ct_assist.reference_detection">
+<span id="reference-detection-py"></span><h1>reference_detection.py<a class="headerlink" href="#module-ct_assist.reference_detection" title="Permalink to this headline">¶</a></h1>
+<p>This module contains the functions necessary to extract head-feet pairs from images, load Detectron2 models, and parse the detectron2 output.</p>
+<p>Use <cite>get_heads_feet</cite> to extract a head-feet pair from a single instance/binary mask.</p>
+<p>Use <cite>extract_reference</cite> to extract a series of head-feet pairs from a single image.</p>
+<div class="section" id="usage-example">
+<h2>Usage example<a class="headerlink" href="#usage-example" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># If you plan on using detectron2</span>
+<span class="n">predictor</span><span class="p">,</span> <span class="n">cfg</span> <span class="o">=</span> <span class="n">load_model</span><span class="p">()</span>  <span class="c1"># Basic COCO-trained mask-rcnn, threshold = 0.7</span>
+<span class="n">preds</span> <span class="o">=</span> <span class="n">predictor</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>  <span class="c1"># Your image here</span>
+<span class="kn">from</span> <span class="nn">detectron2.data</span> <span class="kn">import</span> <span class="n">MetadataCatalog</span>
+<span class="n">objects</span> <span class="o">=</span> <span class="n">instances_to_dict</span><span class="p">(</span><span class="n">preds</span><span class="p">,</span> <span class="n">MetadataCatalog</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">cfg</span><span class="o">.</span><span class="n">DATASETS</span><span class="o">.</span><span class="n">TRAIN</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;thing_classes&quot;</span><span class="p">))</span>
+<span class="n">reference</span> <span class="o">=</span> <span class="n">extract_reference</span><span class="p">(</span><span class="n">objects</span><span class="p">)</span>  <span class="c1"># These are the head-feet pairs!</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h2>
+<dl class="py function">
+<dt id="ct_assist.reference_detection.extract_reference">
+<code class="sig-prename descclassname">ct_assist.reference_detection.</code><code class="sig-name descname">extract_reference</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">objects</span><span class="p">:</span> <span class="n">dict</span></em>, <em class="sig-param"><span class="n">step_size</span><span class="p">:</span> <span class="n">int</span> <span class="o">=</span> <span class="default_value">10</span></em>, <em class="sig-param"><span class="n">offset</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">0.1</span></em>, <em class="sig-param"><span class="n">height_dict</span><span class="p">:</span> <span class="n">dict</span> <span class="o">=</span> <span class="default_value">{'car': 1.425, 0.0247, 'person': 1.741, 0.05, 'truck': 3, 1}</span></em>, <em class="sig-param"><span class="n">always_warn</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">True</span></em><span class="sig-paren">)</span> &#x2192; List<span class="p">[</span>Tuple<span class="p">[</span>numpy.ndarray<span class="p">, </span>float<span class="p">, </span>float<span class="p">]</span><span class="p">]</span><a class="reference internal" href="_modules/ct_assist/reference_detection.html#extract_reference"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ct_assist.reference_detection.extract_reference" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extracts references from dictionary filled with predictions.</p>
+<p>See instances_to_dict for objects’ format. The output is based on the output for get_heads_feet.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>objects</strong> (<em>dict</em>) – key : [mask]</p></li>
+<li><p><strong>step_size</strong> (<em>int</em><em>, </em><em>optional</em>) – How many pixels to skip, defaults to 10</p></li>
+<li><p><strong>offset</strong> (<em>float</em><em>, </em><em>optional</em>) – Minimum size relative to median distance between heads and feet, defaults to 0.1</p></li>
+<li><p><strong>height_dict</strong> (<em>dictionary</em>) – dictionary mapping object-type to height, defualts to HEIGHT_DICT</p></li>
+<li><p><strong>always_warn</strong> – If SkipFieldWarning should always be thrown</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>[(reference, height, STD)]</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>List[Tuple[np.ndarray, float, float]]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="ct_assist.reference_detection.get_heads_feet">
+<code class="sig-prename descclassname">ct_assist.reference_detection.</code><code class="sig-name descname">get_heads_feet</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">mask</span><span class="p">:</span> <span class="n">None._VariableFunctionsClass.tensor</span></em>, <em class="sig-param"><span class="n">step_size</span><span class="o">=</span><span class="default_value">5</span></em>, <em class="sig-param"><span class="n">offset</span><span class="o">=</span><span class="default_value">0.1</span></em><span class="sig-paren">)</span> &#x2192; numpy.ndarray<a class="reference internal" href="_modules/ct_assist/reference_detection.html#get_heads_feet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ct_assist.reference_detection.get_heads_feet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gets head and feet from torch tensor segmentation mask.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mask</strong> (<em>torch.tensor</em>) – Segmentation mask</p></li>
+<li><p><strong>step_size</strong> (<em>int</em><em>, </em><em>optional</em>) – Amount of found head feet pairs to skip to avoid overfitting, defaults to 5</p></li>
+<li><p><strong>offset</strong> (<em>float</em><em>, </em><em>optional</em>) – Permitted distance from median head-feet distance in percentages, defaults to 0.1</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Returns numpy array with [heads, feet]</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>np.ndarray</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="ct_assist.reference_detection.instances_to_dict">
+<code class="sig-prename descclassname">ct_assist.reference_detection.</code><code class="sig-name descname">instances_to_dict</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">preds</span><span class="p">:</span> <span class="n">dict</span></em>, <em class="sig-param"><span class="n">thing_classes</span><span class="p">:</span> <span class="n">list</span></em><span class="sig-paren">)</span> &#x2192; collections.defaultdict<a class="reference internal" href="_modules/ct_assist/reference_detection.html#instances_to_dict"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ct_assist.reference_detection.instances_to_dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Take Detectron2.engine.DefaultPredictor output, and turns it into an easily parsable dictionary.</p>
+<p>Have a cfg ready? Use: detectron2.data.MetadataCatalog.get(cfg.DATASETS.TRAIN[0]).get(“thing_classes”))
+for your thing_classes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>preds</strong> (<em>dict</em>) – dict to Instances object containing segmentation masks, output from defaultpredictor</p></li>
+<li><p><strong>thing_classes</strong> (<em>list</em>) – List mapping integers to string</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>object-name : [masks]</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>defaultdict</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py function">
+<dt id="ct_assist.reference_detection.load_model">
+<code class="sig-prename descclassname">ct_assist.reference_detection.</code><code class="sig-name descname">load_model</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">model_url</span><span class="p">:</span> <span class="n">str</span> <span class="o">=</span> <span class="default_value">'COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml'</span></em>, <em class="sig-param"><span class="n">threshold</span><span class="p">:</span> <span class="n">float</span> <span class="o">=</span> <span class="default_value">0.7</span></em>, <em class="sig-param"><span class="n">return_cfg</span><span class="p">:</span> <span class="n">bool</span> <span class="o">=</span> <span class="default_value">False</span></em><span class="sig-paren">)</span> &#x2192; detectron2.engine.defaults.DefaultPredictor<a class="reference internal" href="_modules/ct_assist/reference_detection.html#load_model"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#ct_assist.reference_detection.load_model" title="Permalink to this definition">¶</a></dt>
+<dd><p>Loads detectron2 model at model dir with threshold, option to return</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>model_url</strong> (<em>str</em><em>, </em><em>optional</em>) – Points to yaml file containing config, defaults to “COCO-InstanceSegmentation/mask_rcnn_R_50_FPN_3x.yaml”</p></li>
+<li><p><strong>threshold</strong> (<em>float</em><em>, </em><em>optional</em>) – Confidence threshold, defaults to 0.7</p></li>
+<li><p><strong>return_cfg</strong> (<em>bool</em><em>, </em><em>optional</em>) – If CfgNode obj should be returned, defaults to False</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Detectron2 default predictor</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>DefaultPredictor</p>
+</dd>
+</dl>
+</dd></dl>
+
+</div>
 </div>
 
 

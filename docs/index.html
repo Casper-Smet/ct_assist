@@ -148,13 +148,24 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="welcome-to-ct-assist-s-documentation">
-<h1>Welcome to ct_assist’s documentation!<a class="headerlink" href="#welcome-to-ct-assist-s-documentation" title="Permalink to this headline">¶</a></h1>
+  <div class="section" id="module-ct_assist">
+<span id="welcome-to-ct-assist-s-documentation"></span><h1>Welcome to ct_assist’s documentation!<a class="headerlink" href="#module-ct_assist" title="Permalink to this headline">¶</a></h1>
+<p>ct_assist, or CameraTransform-Assistance, is a Python package for finding reference objects (head-feet pairs) from images, and using them with CameraTransform.</p>
+<p>This package was made for TNO and EU-project ASSISTANCE.</p>
+<p>transform.py contains functions for fitting CameraTransform’s camera, extracting exif data from images, and estimating sensor size based.</p>
+<p>reference_detection.py contains functions for finding head-feet pairs on images, used for CameraTransform fitting.</p>
 <div class="toctree-wrapper compound">
 <p class="caption"><span class="caption-text">Contents:</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="reference_detection.html">reference_detection.py</a></li>
-<li class="toctree-l1"><a class="reference internal" href="transformation.html">transform.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reference_detection.html">reference_detection.py</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="reference_detection.html#usage-example">Usage example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference_detection.html#functions">Functions</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="transformation.html">transform.py</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="transformation.html#functions">Functions</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="utils.html">utils</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="utils/accuracy.html">accuracy.py</a></li>
 <li class="toctree-l2"><a class="reference internal" href="utils/visualize.html">visualize.py</a></li>
