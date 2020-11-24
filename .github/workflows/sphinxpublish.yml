@@ -27,10 +27,16 @@ jobs:
     - name: Install library
       run: |
         pip install .
+    - name: Install sphinx
+      run: |
+        $CONDA/bin/conda install -c anaconda sphinx
+        $CONDA/bin/conda install -c anaconda sphinx_rtd_theme
     - name: Sphinx build
-      uses: ammaraskar/sphinx-action@0.4
-      with:
-        docs-folder: "srcdoc/"
+      run: |
+        make html
+      # uses: ammaraskar/sphinx-action@0.4
+      # with:
+      #   docs-folder: "srcdoc/"
     - name: git config
       run: |
         git config --local user.email secrets.email
