@@ -1,5 +1,6 @@
 # vscode stuff
 .vscode/
+srcdoc/source/_build/
 
 # Jupyter Notebook stuff
 */.ipynb_checkpoints/*

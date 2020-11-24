@@ -1,8 +1,7 @@
 """
 Module containing utils for ct_assist
 
- - accuracy
- - visualize
+These modules are untested.
 """
 
 from . import accuracy
