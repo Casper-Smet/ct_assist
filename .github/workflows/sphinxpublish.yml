@@ -20,6 +20,13 @@ jobs:
     - uses: actions/checkout@v2
     - name: Set up Python 3.7.7
       uses: actions/setup-python@v2
+    - name: Install dependencies
+      run: |
+        # $CONDA is an environment variable pointing to the root of the miniconda directory
+        $CONDA/bin/conda env update --file env.yml --name base
+    - name: Install library
+      run: |
+        pip install .
     - name: Sphinx build
       uses: ammaraskar/sphinx-action@0.4
       with:
