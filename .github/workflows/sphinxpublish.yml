@@ -26,7 +26,7 @@ jobs:
         $CONDA/bin/conda env update --file env.yml --name base
     - name: Install library
       run: |
-        pip install .
+        $CONDA/bin/pip install .
     - name: Install sphinx
       run: |
         $CONDA/bin/conda install -c anaconda sphinx --name base
