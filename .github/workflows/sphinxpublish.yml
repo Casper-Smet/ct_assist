@@ -1,0 +1,40 @@
+name: Sphinx publish
+
+
+on: 
+  release:
+    types: [created]
+
+  push:
+    branches:
+      - documentation
+
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 5
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python 3.7.7
+      uses: actions/setup-python@v2
+    - name: Sphinx build
+      uses: ammaraskar/sphinx-action@0.4
+      with:
+        docs-folder: "srcdoc/"
+    # - name: git config
+    #   run: |
+    #     git config --local user.email secrets.email
+    #     git config --local u
+    - name: Check for changes
+      run: git status
+    - name: Stage changed files in docs
+      run: git add docs
+    - name: Commit docs
+      run: git commit -m "Auto update documentation"
+    - name: Push docs to main
+      run: git push origin HEAD:documentation
+    
+        
