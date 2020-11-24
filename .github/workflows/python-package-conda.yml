@@ -35,3 +35,7 @@ jobs:
       run: |
         conda install pytest
         $CONDA/bin/pytest
+    - name: Sphinx build
+      uses: ammaraskar/sphinx-action@0.4
+      with:
+        docs-folder: "srcdoc/"
