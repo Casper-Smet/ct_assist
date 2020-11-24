@@ -1,12 +1,10 @@
-name: Python Package using Conda
+name: Sphinx publish
+
 
 on: 
   release:
     types: [created]
 
-  push:
-    branches:
-      - documentation
 
 
 jobs:
@@ -19,14 +17,30 @@ jobs:
     - uses: actions/checkout@v2
     - name: Set up Python 3.7.7
       uses: actions/setup-python@v2
+    - name: Install dependencies
+      run: |
+        # $CONDA is an environment variable pointing to the root of the miniconda directory
+        $CONDA/bin/conda env update --file env.yml --name base
+    - name: Install library
+      run: |
+        $CONDA/bin/pip install .
+    - name: Install sphinx
+      run: |
+        $CONDA/bin/conda install -c anaconda sphinx --name base
+        $CONDA/bin/conda install -c anaconda sphinx_rtd_theme --name base
+    # - name: Move to source directory
+    #   run: cd srcdoc/
     - name: Sphinx build
-      uses: ammaraskar/sphinx-action@0.4
-      with:
-        docs-folder: "srcdoc/"
-    # - name: git config
-    #   run: |
-    #     git config --local user.email secrets.email
-    #     git config --local u
+      run: |
+        # make html
+        $CONDA/bin/sphinx-build -b html srcdoc/source docs/
+      # uses: ammaraskar/sphinx-action@0.4
+      # with:
+      #   docs-folder: "srcdoc/"
+    - name: git config
+      run: |
+        git config --local user.email secrets.email
+        git config --local user.name secrets.name
     - name: Check for changes
       run: git status
     - name: Stage changed files in docs
