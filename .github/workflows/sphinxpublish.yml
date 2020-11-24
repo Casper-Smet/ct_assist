@@ -1,4 +1,5 @@
-name: Python Package using Conda
+name: Sphinx publish
+
 
 on: 
   release:
