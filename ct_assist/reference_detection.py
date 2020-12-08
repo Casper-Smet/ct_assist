@@ -160,7 +160,7 @@ def extract_reference(objects: dict, step_size: int = 10, offset: float = 0.1,
     :type step_size: int, optional
     :param offset: Minimum size relative to median distance between heads and feet, defaults to 0.1
     :type offset: float, optional
-    :param height_dict: dictionary mapping object-type to height, defualts to HEIGHT_DICT
+    :param height_dict: dictionary mapping object-type to height, defaults to HEIGHT_DICT
     :type height_dict: dictionary
     :param always_warn: If SkipFieldWarning should always be thrown
     :return: [(reference, height, STD)]
