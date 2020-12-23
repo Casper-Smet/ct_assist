@@ -21,7 +21,7 @@ def camera_properties(X_test: List[dict], Y_true: List[Tuple[float, float, float
     :rtype: float
     """
     cam_generator = map(lambda params: transform.fit(
-        **params).orientation.parameters, tqdm(X_test, disable=not verbose))
+        **params), tqdm(X_test, disable=not verbose))
     Y_pred = list(map(lambda cam: (cam.roll_deg, cam.tilt_deg,
                                    cam.heading_deg, cam.elevation_m), cam_generator))
     Y_pred = np.array(Y_pred)
