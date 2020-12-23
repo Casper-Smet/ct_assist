@@ -65,5 +65,5 @@ def area(X_test: List[dict], y_true: List[float], verbose: bool = True) -> float
     :rtype: float
     """
     Y_pred = list(map(lambda params: sum(calc_area(
-        poly[:, :2]) for poly in transform.fit_transform(**params)), tqdm(X_test)))
+        poly[:, :2]) for poly in transform.fit_transform(**params)), tqdm(X_test, disable= not verbose)))
     return mean_squared_error(y_true, Y_pred, squared=False), Y_pred
