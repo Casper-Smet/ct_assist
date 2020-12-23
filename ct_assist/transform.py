@@ -19,8 +19,8 @@ from ct_assist.exceptions import DimensionError, MissingExifError
 
 
 def fit_transform(img: Image.Image, reference: np.ndarray, height: np.ndarray, STD: int, image_coords: np.ndarray,
-                  meta_data: dict = None, z: float = 0.0, iters=1e4, verbose=False, seed: int = None,
-                  multi: bool = False) -> np.ndarray:
+                  meta_data: dict = None, z: float = 0.0, iters=1e3, verbose=False, seed: int = None,
+                  multi: bool = False, max_height: int = 3) -> np.ndarray:
     """Function composition for transforming image-coordinates to real-world coordinates
     using the other functions declared in transform.py.
 
@@ -55,7 +55,7 @@ def fit_transform(img: Image.Image, reference: np.ndarray, height: np.ndarray, S
             f"Expected `z` to be of type float|np.ndarray, not {type(z)}")
 
     cam = fit(img=img, reference=reference, height=height, STD=STD,
-              meta_data=meta_data, iters=iters, verbose=verbose, seed=seed, multi=multi)
+              meta_data=meta_data, iters=iters, verbose=verbose, seed=seed, multi=multi, max_height=max_height)
 
     if isinstance(image_coords, list):
         real_pos = [cam.spaceFromImage(points=x) for x in image_coords]
@@ -65,8 +65,8 @@ def fit_transform(img: Image.Image, reference: np.ndarray, height: np.ndarray, S
     return real_pos
 
 
-def fit(img: Image.Image, reference: np.ndarray, height: np.ndarray, STD: int, meta_data: dict = None, iters=1e4, verbose=False,
-        seed: int = None, multi: bool = False) -> ct.Camera:
+def fit(img: Image.Image, reference: np.ndarray, height: np.ndarray, STD: int, meta_data: dict = None, iters=1e3, verbose=False,
+        seed: int = None, multi: bool = False, max_height: int = 3) -> ct.Camera:
     """Creates a trained CameraTransform.Camera object. See "https://cameratransform.readthedocs.io/en/latest/camera.html".
 
     :param img: Photograph in PIL image format
@@ -164,18 +164,17 @@ def fit(img: Image.Image, reference: np.ndarray, height: np.ndarray, STD: int, m
     # Fit for all spatial parameters
     cam.metropolis([
         ct.FitParameter("elevation_m", lower=0,
-                        upper=200, value=2),
+                        upper=max_height, value=2),
         ct.FitParameter("tilt_deg", lower=0, upper=180, value=80),
         ct.FitParameter("heading_deg", lower=-180, upper=180, value=-77),
         ct.FitParameter("roll_deg", lower=-180, upper=180, value=0)
     ], iterations=iters, print_trace=verbose, disable_bar=not verbose)
 
-    # TODO: Consider changing this to maximum-minimum values instead of re-running.
     # In some edge cases, the roll, tilt, heading, or elevation may be outside of its bounds.
     # In this case, the algorithm is rerun.
     params = cam.orientation.parameters
     if (-180 <= params.roll_deg <= 180) and (-180 <= params.tilt_deg <= 180) and\
-       (-180 <= params.heading_deg <= 180) and (0 <= params.elevation_m <= 200):
+       (-180 <= params.heading_deg <= 180) and (0 <= params.elevation_m <= max_height):
         # If all parameters are in bounds, return cam
         return cam
     else:
