@@ -141,6 +141,7 @@ dmypy.json
 # Data
 notebooks/data/heads_feet/
 notebooks/data/no_tolerance/
+notebooks/data/comp/
 
 # VIM (?)
 *.swp
