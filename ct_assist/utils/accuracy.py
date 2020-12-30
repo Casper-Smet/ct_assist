@@ -24,7 +24,7 @@ def camera_properties(X_test: List[dict], Y_true: List[Tuple[float, float, float
     :type Y_true: List[Tuple[float, float, float, float]]
     :param verbose: TQDM, defaults to True
     :type verbose: bool
-    :param mp: Multiprocessing used, defaults to False
+    :param mp: Multiprocessing used, defaults to True
     :type mp: bool
     :return: RMSE for roll_deg, tilt_deg, heading_deg, elevation_m
     :rtype: float
@@ -67,7 +67,7 @@ def _area(params):
         poly[:, :2]) for poly in transform.fit_transform(**params))
 
 
-def area(X_test: List[dict], y_true: List[float], verbose: bool = True, mp: bool = False) -> float:
+def area(X_test: List[dict], y_true: List[float], verbose: bool = True, mp: bool = True) -> float:
     """Accuracy test for area.
 
     :param X_test: List of kwargs for transform.fit
@@ -76,7 +76,7 @@ def area(X_test: List[dict], y_true: List[float], verbose: bool = True, mp: bool
     :type y_true: List[float]
     :param verbose: TQDM, defaults to True
     :type verbose: bool
-    :param mp: Multiprocessing used, defaults to False
+    :param mp: Multiprocessing used, defaults to True
     :type mp: bool
     :return: RMSE, Aka loss
     :rtype: float
