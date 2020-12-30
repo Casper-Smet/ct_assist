@@ -1,11 +1,18 @@
+from multiprocessing import Pool
 from typing import List, Tuple
 
 import numpy as np
 from sklearn.metrics import mean_squared_error
-from tqdm import tqdm
+# from tqdm import tqdm
+# from tqdm.contrib.concurrent import process_map
 
 from ct_assist import transform
 from ct_assist.exceptions import DimensionError
+
+
+def _extract_props(params):
+    cam = transform.fit(**params)
+    return (cam.roll_deg, cam.tilt_deg, cam.heading_deg, cam.elevation_m)
 
 
 def camera_properties(X_test: List[dict], Y_true: List[Tuple[float, float, float, float]], verbose: bool = True) -> float:
@@ -20,10 +27,13 @@ def camera_properties(X_test: List[dict], Y_true: List[Tuple[float, float, float
     :return: RMSE for roll_deg, tilt_deg, heading_deg, elevation_m
     :rtype: float
     """
-    cam_generator = map(lambda params: transform.fit(
-        **params), tqdm(X_test, disable=not verbose))
-    Y_pred = list(map(lambda cam: (cam.roll_deg, cam.tilt_deg,
-                                   cam.heading_deg, cam.elevation_m), cam_generator))
+    # cam_generator = map(lambda params: transform.fit(
+    #     **params), tqdm(X_test, disable=not verbose))
+    with Pool() as p:
+        Y_pred = p.map(_extract_props, X_test)
+    # Y_pred = process_map(_extract_props, X_test, disable=not verbose)
+    # Y_pred = list(map(lambda cam: (cam.roll_deg, cam.tilt_deg,
+    #                             cam.heading_deg, cam.elevation_m), cam_generator))
     Y_pred = np.array(Y_pred)
     Y_true = np.array(Y_true)
 
@@ -52,6 +62,11 @@ def calc_area(poly: np.ndarray) -> float:
     return ar if not np.isnan(ar).any() else 0
 
 
+def _area(params):
+    return sum(calc_area(
+        poly[:, :2]) for poly in transform.fit_transform(**params))
+
+
 def area(X_test: List[dict], y_true: List[float], verbose: bool = True) -> float:
     """Accuracy test for area.
 
@@ -64,6 +79,7 @@ def area(X_test: List[dict], y_true: List[float], verbose: bool = True) -> float
     :return: RMSE, Aka loss
     :rtype: float
     """
-    Y_pred = list(map(lambda params: sum(calc_area(
-        poly[:, :2]) for poly in transform.fit_transform(**params)), tqdm(X_test, disable= not verbose)))
+
+    with Pool() as p:
+        Y_pred = p.map(_area, X_test)
     return mean_squared_error(y_true, Y_pred, squared=False), Y_pred
