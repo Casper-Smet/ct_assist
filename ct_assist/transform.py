@@ -17,6 +17,8 @@ from PIL import Image
 
 from ct_assist.exceptions import DimensionError, MissingExifError
 
+MAX_DEPTH = 10
+
 
 def fit_transform(img: Image.Image, reference: np.ndarray, height: np.ndarray, STD: int, image_coords: np.ndarray,
                   meta_data: dict = None, z: float = 0.0, iters=1e3, verbose=False, seed: int = None,
@@ -66,7 +68,7 @@ def fit_transform(img: Image.Image, reference: np.ndarray, height: np.ndarray, S
 
 
 def fit(img: Image.Image, reference: np.ndarray, height: np.ndarray, STD: int, meta_data: dict = None, iters=1e3, verbose=False,
-        seed: int = None, multi: bool = False, max_height: int = 3) -> ct.Camera:
+        seed: int = None, multi: bool = False, max_height: int = 3, _depth=0) -> ct.Camera:
     """Creates a trained CameraTransform.Camera object. See "https://cameratransform.readthedocs.io/en/latest/camera.html".
 
     :param img: Photograph in PIL image format
@@ -87,6 +89,8 @@ def fit(img: Image.Image, reference: np.ndarray, height: np.ndarray, STD: int, m
     :type seed: int
     :param multi: If multiple object types are passed, changes STD, height, and reference shapes and types, defauls to False
     :type multi: bool
+    :param max_height: Maximum height for camera, defaults to 3 (meters)
+    :type max_height: int
     :return: image_coords transformed to real-world coordinates
     :rtype: np.ndarray
     """
@@ -172,15 +176,21 @@ def fit(img: Image.Image, reference: np.ndarray, height: np.ndarray, STD: int, m
 
     # In some edge cases, the roll, tilt, heading, or elevation may be outside of its bounds.
     # In this case, the algorithm is rerun.
-    params = cam.orientation.parameters
-    if (-180 <= params.roll_deg <= 180) and (-180 <= params.tilt_deg <= 180) and\
-       (-180 <= params.heading_deg <= 180) and (0 <= params.elevation_m <= max_height):
+    if (-180 <= cam.roll_deg <= 180) and (-180 <= cam.tilt_deg <= 180) and\
+       (-180 <= cam.heading_deg <= 180) and (0 <= cam.elevation_m <= max_height):
         # If all parameters are in bounds, return cam
         return cam
     else:
+        if _depth > MAX_DEPTH:
+            cam.roll_deg = np.clip(cam.roll_deg, -180, 180)
+            cam.heading_deg = np.clip(cam.heading_deg, -180, 180)
+            cam.tilt_deg = np.clip(cam.tilt_deg, -180, 180)
+            cam.elevation_m = np.clip(cam.elevation_m, 0, max_height)
+            return cam
         # If not, rerun
         return fit(img=img, reference=reference, height=height, STD=STD, multi=multi,
-                   meta_data={"focal_length": f, "sensor_size": sensor_size, "image_size": image_size})
+                   meta_data={"focal_length": f, "sensor_size": sensor_size, "image_size": image_size}, max_height=max_height,
+                   _depth=_depth + 1)
 
 
 def get_Exif(img: Image.Image) -> Tuple[float, Tuple[int, int], Tuple[float, float]]:
