@@ -85,5 +85,5 @@ def area(X_test: List[dict], y_true: List[float], verbose: bool = True, mp: bool
         with Pool() as p:
             Y_pred = p.map(_area, X_test)
     else:
-        Y_pred = map(_area, tqdm(X_test, disable=not verbose))
+        Y_pred = list(map(_area, tqdm(X_test, disable=not verbose)))
     return mean_squared_error(y_true, Y_pred, squared=False), Y_pred
