@@ -21,7 +21,7 @@ MAX_DEPTH = 10
 
 
 def fit_transform(img: Image.Image, reference: np.ndarray, height: np.ndarray, STD: int, image_coords: np.ndarray,
-                  meta_data: dict = None, z: float = 0.0, iters=1e3, verbose=False, seed: int = None,
+                  meta_data: dict = None, z: float = 0.0, iters=1e4, verbose=False, seed: int = None,
                   multi: bool = False, max_height: int = 3) -> np.ndarray:
     """Function composition for transforming image-coordinates to real-world coordinates
     using the other functions declared in transform.py.
@@ -37,7 +37,7 @@ def fit_transform(img: Image.Image, reference: np.ndarray, height: np.ndarray, S
     :type STD: np.ndarray or float
     :param meta_data: image meta data for intrinsic camera properties, defaults to None
     :type meta_data: dict
-    :param iters: Amount of iterations in Monte Carlo simulation
+    :param iters: Amount of iterations in Monte Carlo simulation, defaults to 1e4
     :type iters: int
     :param verbose: If progress bar and trace should be printed, defaults to False
     :type verbose: bool
@@ -67,7 +67,7 @@ def fit_transform(img: Image.Image, reference: np.ndarray, height: np.ndarray, S
     return real_pos
 
 
-def fit(img: Image.Image, reference: np.ndarray, height: np.ndarray, STD: int, meta_data: dict = None, iters=1e3, verbose=False,
+def fit(img: Image.Image, reference: np.ndarray, height: np.ndarray, STD: int, meta_data: dict = None, iters=1e4, verbose=False,
         seed: int = None, multi: bool = False, max_height: int = 3, _depth=0) -> ct.Camera:
     """Creates a trained CameraTransform.Camera object. See "https://cameratransform.readthedocs.io/en/latest/camera.html".
 
@@ -81,7 +81,7 @@ def fit(img: Image.Image, reference: np.ndarray, height: np.ndarray, STD: int, m
     :type STD: np.ndarray or float
     :param meta_data: image meta data for intrinsic camera properties, defaults to None
     :type meta_data: dict
-    :param iters: Amount of iterations in Monte Carlo simulation
+    :param iters: Amount of iterations in Monte Carlo simulation, defaults to 1e4
     :type iters: int
     :param verbose: If progress bar and trace should be printed, defaults to False
     :type verbose: bool
