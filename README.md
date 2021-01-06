@@ -4,7 +4,7 @@
 This project was made for EU-Project ASSISTANCE. See below for more.
 
 ## Use case
-This library will be applied to images of fluid spills in order to estimate their area and release rate. See [fluid_estimator](https://github.com/Casper-Smet/spill_estimator).
+This library will be applied to images of fluid spills in order to estimate their area and release rate. See [fluid_estimator](https://github.com/Casper-Smet/spill_estimator), request access from the [the author](mailto:casper.smet@gmail.com).
 
 
 ## CameraTransform
