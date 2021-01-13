@@ -35,6 +35,8 @@ def fit_transform(img: Image.Image, reference: np.ndarray, height: np.ndarray, S
     :type height: np.ndarray or float
     :param STD: STD(s) of reference
     :type STD: np.ndarray or float
+    :param image_coords: Coordinates to transform, [[x0, y0], [x1, y1], [x2, y2]]
+    :type image_coords: np.ndarray or list
     :param meta_data: image meta data for intrinsic camera properties, defaults to None
     :type meta_data: dict
     :param iters: Amount of iterations in Monte Carlo simulation, defaults to 1e4
