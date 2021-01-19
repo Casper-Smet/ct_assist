@@ -230,7 +230,7 @@ def test_fit(monkeypatch):
                 continue
             with pytest.raises(TypeError, match="Expected `height` to be np.ndarray or float"):
                 transform.fit(
-                    img=img, reference=np.array([np.array([[1, 1]]), np.array([[1, 1]])]), height=height, STD=1, image_coords=np.array([1]))
+                    img=img, reference=np.array([np.array([[1, 1]]), np.array([[1, 1]])]), height=height, STD=1)
 
         # Wrong type for STD
         for STD in type_mistakes:
@@ -238,7 +238,7 @@ def test_fit(monkeypatch):
                 continue
             with pytest.raises(TypeError, match="Expected `STD` to be np.ndarray or float"):
                 transform.fit(
-                    img=img, reference=np.array([np.array([[1, 1]]), np.array([[1, 1]])]), height=1.0, STD=STD, image_coords=np.array([1]))
+                    img=img, reference=np.array([np.array([[1, 1]]), np.array([[1, 1]])]), height=1.0, STD=STD)
 
 
 def test_get_Exif(monkeypatch):
