@@ -1,14 +1,21 @@
+from multiprocessing import Pool
 from typing import List, Tuple
 
 import numpy as np
 from sklearn.metrics import mean_squared_error
 from tqdm import tqdm
+# from tqdm.contrib.concurrent import process_map
 
 from ct_assist import transform
 from ct_assist.exceptions import DimensionError
 
 
-def camera_properties(X_test: List[dict], Y_true: List[Tuple[float, float, float, float]], verbose: bool = True) -> float:
+def _extract_props(params):
+    cam = transform.fit(**params)
+    return (cam.roll_deg, cam.tilt_deg, cam.heading_deg, cam.elevation_m)
+
+
+def camera_properties(X_test: List[dict], Y_true: List[Tuple[float, float, float, float]], verbose: bool = True, mp: bool = True) -> float:
     """Accuracy test for camera properties (roll_deg, tilt_deg, heading_deg, elevation_m)
 
     :param X_test: List of kwargs for `transform.fit`
@@ -17,13 +24,16 @@ def camera_properties(X_test: List[dict], Y_true: List[Tuple[float, float, float
     :type Y_true: List[Tuple[float, float, float, float]]
     :param verbose: TQDM, defaults to True
     :type verbose: bool
+    :param mp: Multiprocessing used, defaults to True
+    :type mp: bool
     :return: RMSE for roll_deg, tilt_deg, heading_deg, elevation_m
     :rtype: float
     """
-    cam_generator = map(lambda params: transform.fit(
-        **params).orientation.parameters, tqdm(X_test, disable=not verbose))
-    Y_pred = list(map(lambda cam: (cam.roll_deg, cam.tilt_deg,
-                                   cam.heading_deg, cam.elevation_m), cam_generator))
+    if mp:
+        with Pool() as p:
+            Y_pred = p.map(_extract_props, X_test)
+    else:
+        Y_pred = list(map(_extract_props, tqdm(X_test, disable=not verbose)))
     Y_pred = np.array(Y_pred)
     Y_true = np.array(Y_true)
 
@@ -52,7 +62,12 @@ def calc_area(poly: np.ndarray) -> float:
     return ar if not np.isnan(ar).any() else 0
 
 
-def area(X_test: List[dict], y_true: List[float], verbose: bool = True) -> float:
+def _area(params):
+    return sum(calc_area(
+        poly[:, :2]) for poly in transform.fit_transform(**params))
+
+
+def area(X_test: List[dict], y_true: List[float], verbose: bool = True, mp: bool = True) -> float:
     """Accuracy test for area.
 
     :param X_test: List of kwargs for transform.fit
@@ -61,9 +76,14 @@ def area(X_test: List[dict], y_true: List[float], verbose: bool = True) -> float
     :type y_true: List[float]
     :param verbose: TQDM, defaults to True
     :type verbose: bool
+    :param mp: Multiprocessing used, defaults to True
+    :type mp: bool
     :return: RMSE, Aka loss
     :rtype: float
     """
-    Y_pred = list(map(lambda params: sum(calc_area(
-        poly[:, :2]) for poly in transform.fit_transform(**params)), tqdm(X_test)))
+    if mp:
+        with Pool() as p:
+            Y_pred = p.map(_area, X_test)
+    else:
+        Y_pred = list(map(_area, tqdm(X_test, disable=not verbose)))
     return mean_squared_error(y_true, Y_pred, squared=False), Y_pred

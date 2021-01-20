@@ -41,6 +41,10 @@ jobs:
       run: |
         git config --local user.email secrets.email
         git config --local user.name secrets.name
+    - name: checkout
+      run: |
+        git fetch origin
+        git checkout -b documentation origin/documentation
     - name: Check for changes
       run: git status
     - name: Stage changed files in docs
