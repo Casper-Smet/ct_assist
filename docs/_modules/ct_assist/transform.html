@@ -1,0 +1,521 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>ct_assist.transform &mdash; ct_assist 1.1 documentation</title>
+  
+
+  
+  
+  
+  
+
+  
+  <script type="text/javascript" src="../../_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/jquery.js"></script>
+        <script src="../../_static/underscore.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/language_data.js"></script>
+    
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+
+    
+
+  
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav">
+
+   
+  <div class="wy-grid-for-nav">
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> ct_assist
+          
+
+          
+          </a>
+
+          
+            
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+              
+            
+            
+              <p class="caption"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../reference_detection.html">reference_detection.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../transformation.html">transform.py</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../utils.html">utils</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">ct_assist</a>
+        
+      </nav>
+
+
+      <div class="wy-nav-content">
+        
+        <div class="rst-content">
+        
+          
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+
+  <ul class="wy-breadcrumbs">
+    
+      <li><a href="../../index.html">Docs</a> &raquo;</li>
+        
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+        
+      <li>ct_assist.transform</li>
+    
+    
+      <li class="wy-breadcrumbs-aside">
+        
+      </li>
+    
+  </ul>
+
+  
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for ct_assist.transform</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">This module contains helper functions of fitting a cameratransform.Camera object and using it to transform image point to real-world points,</span>
+<span class="sd">and functions for extracting exif data, and estimating sensor size.</span>
+
+<span class="sd">This module is a work in progress.</span>
+
+<span class="sd">Functions</span>
+<span class="sd">-----------------------------------</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">numbers</span> <span class="kn">import</span> <span class="n">Rational</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span>
+
+<span class="kn">import</span> <span class="nn">cameratransform</span> <span class="k">as</span> <span class="nn">ct</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span>
+
+<span class="kn">from</span> <span class="nn">ct_assist.exceptions</span> <span class="kn">import</span> <span class="n">DimensionError</span><span class="p">,</span> <span class="n">MissingExifError</span>
+
+<span class="n">MAX_DEPTH</span> <span class="o">=</span> <span class="mi">10</span>
+
+
+<div class="viewcode-block" id="fit_transform"><a class="viewcode-back" href="../../transformation.html#ct_assist.transform.fit_transform">[docs]</a><span class="k">def</span> <span class="nf">fit_transform</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span> <span class="n">reference</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">height</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">STD</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">image_coords</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
+                  <span class="n">meta_data</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">iters</span><span class="o">=</span><span class="mf">1e4</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+                  <span class="n">multi</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">max_height</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Function composition for transforming image-coordinates to real-world coordinates</span>
+<span class="sd">    using the other functions declared in transform.py.</span>
+
+
+<span class="sd">    :param img: Photograph in PIL image format</span>
+<span class="sd">    :type img: Image.Image</span>
+<span class="sd">    :param reference: Tuple with reference object (heads, feet), dim=(2, n, 2)</span>
+<span class="sd">    :type reference: np.ndarray</span>
+<span class="sd">    :param height: Height(s) of reference</span>
+<span class="sd">    :type height: np.ndarray or float</span>
+<span class="sd">    :param STD: STD(s) of reference</span>
+<span class="sd">    :type STD: np.ndarray or float</span>
+<span class="sd">    :param image_coords: Coordinates to transform, [[x0, y0], [x1, y1], [x2, y2]]</span>
+<span class="sd">    :type image_coords: np.ndarray or list</span>
+<span class="sd">    :param meta_data: image meta data for intrinsic camera properties, defaults to None</span>
+<span class="sd">    :type meta_data: dict</span>
+<span class="sd">    :param iters: Amount of iterations in Monte Carlo simulation, defaults to 1e4</span>
+<span class="sd">    :type iters: int</span>
+<span class="sd">    :param verbose: If progress bar and trace should be printed, defaults to False</span>
+<span class="sd">    :type verbose: bool</span>
+<span class="sd">    :param seed: Random seed to be passed to numpy.random.seed (not recommended)</span>
+<span class="sd">    :type seed: int</span>
+<span class="sd">    :param multi: If multiple object types are passed, changes STD, height, and reference shapes and types, defauls to False</span>
+<span class="sd">    :type multi: bool</span>
+<span class="sd">    :return: image_coords transformed to real-world coordinates</span>
+<span class="sd">    :rtype: np.ndarray</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># TODO: Test for types `seed`, `verbose`, `iters`</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">image_coords</span><span class="p">,</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Expected `image_coords` to be of type np.ndarray, not </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">image_coords</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Expected `z` to be of type float|np.ndarray, not </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">z</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">cam</span> <span class="o">=</span> <span class="n">fit</span><span class="p">(</span><span class="n">img</span><span class="o">=</span><span class="n">img</span><span class="p">,</span> <span class="n">reference</span><span class="o">=</span><span class="n">reference</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="n">height</span><span class="p">,</span> <span class="n">STD</span><span class="o">=</span><span class="n">STD</span><span class="p">,</span>
+              <span class="n">meta_data</span><span class="o">=</span><span class="n">meta_data</span><span class="p">,</span> <span class="n">iters</span><span class="o">=</span><span class="n">iters</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span> <span class="n">multi</span><span class="o">=</span><span class="n">multi</span><span class="p">,</span> <span class="n">max_height</span><span class="o">=</span><span class="n">max_height</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">image_coords</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="n">real_pos</span> <span class="o">=</span> <span class="p">[</span><span class="n">cam</span><span class="o">.</span><span class="n">spaceFromImage</span><span class="p">(</span><span class="n">points</span><span class="o">=</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">image_coords</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">real_pos</span> <span class="o">=</span> <span class="n">cam</span><span class="o">.</span><span class="n">spaceFromImage</span><span class="p">(</span><span class="n">points</span><span class="o">=</span><span class="n">image_coords</span><span class="p">,</span> <span class="n">Z</span><span class="o">=</span><span class="n">z</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">real_pos</span></div>
+
+
+<div class="viewcode-block" id="fit"><a class="viewcode-back" href="../../transformation.html#ct_assist.transform.fit">[docs]</a><span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">,</span> <span class="n">reference</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">height</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">STD</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">meta_data</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">iters</span><span class="o">=</span><span class="mf">1e4</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">multi</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">max_height</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span> <span class="n">_depth</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ct</span><span class="o">.</span><span class="n">Camera</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;Creates a trained CameraTransform.Camera object. See &quot;https://cameratransform.readthedocs.io/en/latest/camera.html&quot;.</span>
+
+<span class="sd">    :param img: Photograph in PIL image format</span>
+<span class="sd">    :type img: Image.Image</span>
+<span class="sd">    :param reference: Tuple with reference object (heads, feet), dim=(2, n, 2)</span>
+<span class="sd">    :type reference: np.ndarray</span>
+<span class="sd">    :param height: Height(s) of reference</span>
+<span class="sd">    :type height: np.ndarray or float</span>
+<span class="sd">    :param STD: STD(s) of reference</span>
+<span class="sd">    :type STD: np.ndarray or float</span>
+<span class="sd">    :param meta_data: image meta data for intrinsic camera properties, defaults to None</span>
+<span class="sd">    :type meta_data: dict</span>
+<span class="sd">    :param iters: Amount of iterations in Monte Carlo simulation, defaults to 1e4</span>
+<span class="sd">    :type iters: int</span>
+<span class="sd">    :param verbose: If progress bar and trace should be printed, defaults to False</span>
+<span class="sd">    :type verbose: bool</span>
+<span class="sd">    :param seed: Random seed to be passed to numpy.random.seed (not recommended)</span>
+<span class="sd">    :type seed: int</span>
+<span class="sd">    :param multi: If multiple object types are passed, changes STD, height, and reference shapes and types, defauls to False</span>
+<span class="sd">    :type multi: bool</span>
+<span class="sd">    :param max_height: Maximum height for camera, defaults to 3 (meters)</span>
+<span class="sd">    :type max_height: int</span>
+<span class="sd">    :return: image_coords transformed to real-world coordinates</span>
+<span class="sd">    :rtype: np.ndarray</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># TODO: Test for types `seed`, `verbose`, `iters`</span>
+    <span class="c1"># Check if img is PIL.Image.Image</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Expected `img` to be PIL.Image.Image, not </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">img</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">multi</span><span class="p">:</span>
+        <span class="c1"># Check if reference is a np.ndarray</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">reference</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Expected `reference` to be np.ndarray, not </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">reference</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="c1"># Check dimensionality of reference</span>
+        <span class="k">if</span> <span class="n">reference</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">2</span> <span class="ow">or</span> <span class="n">reference</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">DimensionError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Expected `reference` with dimension (2, n, 2), not </span><span class="si">{</span><span class="n">reference</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">reference</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Expected `reference` to be a list, not </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">reference</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Check if height is int or float or np.ndarray</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">height</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Expected `height` to be np.ndarray or float, not </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">height</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Check if STD is int or float or np.ndarray</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">STD</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Expected `STD` to be np.ndarray or float, not </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">STD</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="c1"># If meta_data was passed by user, use that instead</span>
+    <span class="k">if</span> <span class="n">meta_data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">meta_data</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Expected `meta_data` to be of type dict, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">meta_data</span><span class="p">)</span><span class="si">}</span><span class="s2"> instead&quot;</span><span class="p">)</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="n">meta_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;focal_length&quot;</span><span class="p">)</span>  <span class="c1"># Focal length</span>
+        <span class="n">image_size</span> <span class="o">=</span> <span class="n">meta_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;image_size&quot;</span><span class="p">)</span>  <span class="c1"># Image size</span>
+        <span class="n">sensor_size</span> <span class="o">=</span> <span class="n">meta_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sensor_size&quot;</span><span class="p">)</span>  <span class="c1"># Sensor size</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)))</span> <span class="ow">or</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">image_size</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">))</span> <span class="ow">or</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sensor_size</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Metadata incorrect, check typing: </span><span class="si">{</span><span class="n">meta_data</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Get Focal length, image size, sensor size from image meta data (exif)</span>
+        <span class="n">f</span><span class="p">,</span> <span class="n">image_size</span><span class="p">,</span> <span class="n">sensor_size</span> <span class="o">=</span> <span class="n">get_Exif</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+
+    <span class="c1"># If random seed is given, set numpy.random.seed</span>
+    <span class="k">if</span> <span class="n">seed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># As CameraTransform uses the np legacy version of RNG, this is the only way one can set the seed</span>
+        <span class="c1"># This is, however, not the prefered way to do this.</span>
+        <span class="c1"># See: https://numpy.org/doc/stable/reference/random/generated/numpy.random.seed.html</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+
+    <span class="c1"># Initialise projection</span>
+    <span class="n">proj</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">RectilinearProjection</span><span class="p">(</span><span class="n">focallength_mm</span><span class="o">=</span><span class="n">f</span><span class="p">,</span>
+                                    <span class="n">sensor</span><span class="o">=</span><span class="n">sensor_size</span><span class="p">,</span>
+                                    <span class="n">image</span><span class="o">=</span><span class="n">image_size</span><span class="p">)</span>
+    <span class="c1"># Initialise Camera</span>
+    <span class="n">cam</span> <span class="o">=</span> <span class="n">ct</span><span class="o">.</span><span class="n">Camera</span><span class="p">(</span><span class="n">projection</span><span class="o">=</span><span class="n">proj</span><span class="p">)</span>
+
+    <span class="c1"># Add objects to Camera</span>
+    <span class="k">if</span> <span class="n">multi</span><span class="p">:</span>
+        <span class="c1"># If multiple object types are available, loop through `reference`, `height` and `STD`</span>
+        <span class="k">for</span> <span class="n">ref</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">std</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">reference</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="n">STD</span><span class="p">):</span>
+            <span class="n">cam</span><span class="o">.</span><span class="n">addObjectHeightInformation</span><span class="p">(</span>
+                <span class="n">points_head</span><span class="o">=</span><span class="n">ref</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">points_feet</span><span class="o">=</span><span class="n">ref</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">height</span><span class="o">=</span><span class="n">h</span><span class="p">,</span> <span class="n">variation</span><span class="o">=</span><span class="n">std</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Else, then single object type, pass `reference`, `height` and `STD` regularly</span>
+        <span class="n">cam</span><span class="o">.</span><span class="n">addObjectHeightInformation</span><span class="p">(</span>
+            <span class="n">points_head</span><span class="o">=</span><span class="n">reference</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">points_feet</span><span class="o">=</span><span class="n">reference</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">height</span><span class="o">=</span><span class="n">height</span><span class="p">,</span> <span class="n">variation</span><span class="o">=</span><span class="n">STD</span><span class="p">)</span>
+
+    <span class="c1"># TODO: Consider running this multiple times in parallel, then taking the average. (multiple markov chain)</span>
+    <span class="c1"># Fit for all spatial parameters</span>
+    <span class="n">cam</span><span class="o">.</span><span class="n">metropolis</span><span class="p">([</span>
+        <span class="n">ct</span><span class="o">.</span><span class="n">FitParameter</span><span class="p">(</span><span class="s2">&quot;elevation_m&quot;</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                        <span class="n">upper</span><span class="o">=</span><span class="n">max_height</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span>
+        <span class="n">ct</span><span class="o">.</span><span class="n">FitParameter</span><span class="p">(</span><span class="s2">&quot;tilt_deg&quot;</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mi">180</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">80</span><span class="p">),</span>
+        <span class="n">ct</span><span class="o">.</span><span class="n">FitParameter</span><span class="p">(</span><span class="s2">&quot;heading_deg&quot;</span><span class="p">,</span> <span class="n">lower</span><span class="o">=-</span><span class="mi">180</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mi">180</span><span class="p">,</span> <span class="n">value</span><span class="o">=-</span><span class="mi">77</span><span class="p">),</span>
+        <span class="n">ct</span><span class="o">.</span><span class="n">FitParameter</span><span class="p">(</span><span class="s2">&quot;roll_deg&quot;</span><span class="p">,</span> <span class="n">lower</span><span class="o">=-</span><span class="mi">180</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mi">180</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="p">],</span> <span class="n">iterations</span><span class="o">=</span><span class="n">iters</span><span class="p">,</span> <span class="n">print_trace</span><span class="o">=</span><span class="n">verbose</span><span class="p">,</span> <span class="n">disable_bar</span><span class="o">=</span><span class="ow">not</span> <span class="n">verbose</span><span class="p">)</span>
+
+    <span class="c1"># In some edge cases, the roll, tilt, heading, or elevation may be outside of its bounds.</span>
+    <span class="c1"># In this case, the algorithm is rerun.</span>
+    <span class="k">if</span> <span class="p">(</span><span class="o">-</span><span class="mi">180</span> <span class="o">&lt;=</span> <span class="n">cam</span><span class="o">.</span><span class="n">roll_deg</span> <span class="o">&lt;=</span> <span class="mi">180</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="o">-</span><span class="mi">180</span> <span class="o">&lt;=</span> <span class="n">cam</span><span class="o">.</span><span class="n">tilt_deg</span> <span class="o">&lt;=</span> <span class="mi">180</span><span class="p">)</span> <span class="ow">and</span>\
+       <span class="p">(</span><span class="o">-</span><span class="mi">180</span> <span class="o">&lt;=</span> <span class="n">cam</span><span class="o">.</span><span class="n">heading_deg</span> <span class="o">&lt;=</span> <span class="mi">180</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">cam</span><span class="o">.</span><span class="n">elevation_m</span> <span class="o">&lt;=</span> <span class="n">max_height</span><span class="p">):</span>
+        <span class="c1"># If all parameters are in bounds, return cam</span>
+        <span class="k">return</span> <span class="n">cam</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">_depth</span> <span class="o">&gt;</span> <span class="n">MAX_DEPTH</span><span class="p">:</span>
+            <span class="n">cam</span><span class="o">.</span><span class="n">roll_deg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">cam</span><span class="o">.</span><span class="n">roll_deg</span><span class="p">,</span> <span class="o">-</span><span class="mi">180</span><span class="p">,</span> <span class="mi">180</span><span class="p">)</span>
+            <span class="n">cam</span><span class="o">.</span><span class="n">heading_deg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">cam</span><span class="o">.</span><span class="n">heading_deg</span><span class="p">,</span> <span class="o">-</span><span class="mi">180</span><span class="p">,</span> <span class="mi">180</span><span class="p">)</span>
+            <span class="n">cam</span><span class="o">.</span><span class="n">tilt_deg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">cam</span><span class="o">.</span><span class="n">tilt_deg</span><span class="p">,</span> <span class="o">-</span><span class="mi">180</span><span class="p">,</span> <span class="mi">180</span><span class="p">)</span>
+            <span class="n">cam</span><span class="o">.</span><span class="n">elevation_m</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">cam</span><span class="o">.</span><span class="n">elevation_m</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">max_height</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">cam</span>
+        <span class="c1"># If not, rerun</span>
+        <span class="k">return</span> <span class="n">fit</span><span class="p">(</span><span class="n">img</span><span class="o">=</span><span class="n">img</span><span class="p">,</span> <span class="n">reference</span><span class="o">=</span><span class="n">reference</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="n">height</span><span class="p">,</span> <span class="n">STD</span><span class="o">=</span><span class="n">STD</span><span class="p">,</span> <span class="n">multi</span><span class="o">=</span><span class="n">multi</span><span class="p">,</span>
+                   <span class="n">meta_data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;focal_length&quot;</span><span class="p">:</span> <span class="n">f</span><span class="p">,</span> <span class="s2">&quot;sensor_size&quot;</span><span class="p">:</span> <span class="n">sensor_size</span><span class="p">,</span> <span class="s2">&quot;image_size&quot;</span><span class="p">:</span> <span class="n">image_size</span><span class="p">},</span> <span class="n">max_height</span><span class="o">=</span><span class="n">max_height</span><span class="p">,</span>
+                   <span class="n">_depth</span><span class="o">=</span><span class="n">_depth</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_Exif"><a class="viewcode-back" href="../../transformation.html#ct_assist.transform.get_Exif">[docs]</a><span class="k">def</span> <span class="nf">get_Exif</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">],</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]]:</span>
+    <span class="sd">&quot;&quot;&quot;Extracts or estimates image meta data for Camera intrinsic properties.</span>
+
+<span class="sd">    Extracts:</span>
+<span class="sd">     * Focal length</span>
+<span class="sd">     * Image size</span>
+<span class="sd">     * Sensor size</span>
+
+<span class="sd">    :param img: Photograph in PIL image format</span>
+<span class="sd">    :type img: Image.Image</span>
+<span class="sd">    :return: (focal length, image size, sensor size)</span>
+<span class="sd">    :rtype: Tuple[float, Tuple[int, int], Tuple[float, float]]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Check if img is PILL.Image</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">Image</span><span class="o">.</span><span class="n">Image</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Expected PIL.Image.Image, not </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">img</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">img_size</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">size</span>
+    <span class="c1"># Image dimensions must 1x1 or greater</span>
+    <span class="k">if</span> <span class="n">img_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">img_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">DimensionError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Dimensions must be greater than 0, not </span><span class="si">{</span><span class="n">img_size</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="n">exif_data</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">getexif</span><span class="p">()</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="n">exif_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="mi">37386</span><span class="p">)</span>
+    <span class="c1"># If focal length is unknown, CameraTransform cannot be used</span>
+    <span class="k">if</span> <span class="n">f</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="n">MissingExifError</span><span class="p">(</span><span class="s2">&quot;Actual Focal Length not found in exif&quot;</span><span class="p">)</span>
+    <span class="c1"># Actual focal length must be float-like</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">f</span><span class="p">),</span> <span class="p">(</span><span class="n">Rational</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Actual focal length must be float, not </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">f</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="c1"># f is most likely Rational, convert to float</span>
+    <span class="n">f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+    <span class="c1"># Get model name</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="n">exif_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="mi">272</span><span class="p">)</span>
+    <span class="c1"># Try getting sensor size from model name</span>
+    <span class="n">sensor_size</span> <span class="o">=</span> <span class="n">sensor_size_look_up</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+
+    <span class="c1"># Get FocalPlaneXResolution and FocalPlaneYResolution</span>
+    <span class="n">resolution</span> <span class="o">=</span> <span class="n">exif_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="mi">41486</span><span class="p">),</span> <span class="n">exif_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="mi">41487</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sensor_size</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+        <span class="k">pass</span>
+    <span class="k">elif</span> <span class="n">resolution</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">resolution</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># FocalPlaneResolutions must be float-like</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">resolution</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="p">(</span><span class="n">Rational</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;FocalPlaneXResolution must be float, not </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">resolution</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">resolution</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="p">(</span><span class="n">Rational</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;FocalPlaneYResolution must be float, not </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">resolution</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="c1"># FocalPlaneResolution most likely Rational, convert to float</span>
+        <span class="n">resolution</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">resolution</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">resolution</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">sensor_size</span> <span class="o">=</span> <span class="n">sensor_size_resolution</span><span class="p">(</span><span class="n">resolution</span><span class="p">,</span> <span class="n">img_size</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">effective_f</span> <span class="o">=</span> <span class="n">exif_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="mi">41989</span><span class="p">)</span>
+        <span class="c1"># If neither FocalPlaneResolution or effective focal length is known, CameraTransform may not be used</span>
+        <span class="k">if</span> <span class="n">effective_f</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">MissingExifError</span><span class="p">(</span>
+                <span class="s2">&quot;FocalPlane(X/Y)Resolution and effective focal length not found in exif&quot;</span><span class="p">)</span>
+        <span class="c1"># Effective focal length must be float-like</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">issubclass</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">effective_f</span><span class="p">),</span> <span class="p">(</span><span class="n">Rational</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Effective focal length must be float, not </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">effective_f</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="c1"># f is most likely Rational, convert to float</span>
+        <span class="n">effective_f</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">effective_f</span><span class="p">)</span>
+        <span class="n">sensor_size</span> <span class="o">=</span> <span class="n">sensor_size_crop_factor</span><span class="p">(</span><span class="n">effective_f</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">f</span><span class="p">,</span> <span class="n">img_size</span><span class="p">,</span> <span class="n">sensor_size</span></div>
+
+
+<div class="viewcode-block" id="sensor_size_resolution"><a class="viewcode-back" href="../../transformation.html#ct_assist.transform.sensor_size_resolution">[docs]</a><span class="k">def</span> <span class="nf">sensor_size_resolution</span><span class="p">(</span><span class="n">resolution</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">image_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Estimates sensor size based on FocalPlaneXResolution and FocalPlaneYResolution and image size.</span>
+<span class="sd">    Based on CameraTransform&#39;s sensor size estimation.</span>
+
+<span class="sd">    :param resolution: (FocalPlaneXResolution, FocalPlaneYResolution)</span>
+<span class="sd">    :type resolution: Tuple[FocalPlaneXResolution, FocalPlaneYResolution]</span>
+<span class="sd">    :param image_size: Image size in pixels, w * h</span>
+<span class="sd">    :type image_size: Tuple[int, int]</span>
+<span class="sd">    :return: Sensor size</span>
+<span class="sd">    :rtype: Tuple[float, float]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># `resolution` and `image_size` must be of type tuple</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">resolution</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Expected `resolution` as tuple(float, float)&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">image_size</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Expected `image_size` as tuple(float, float)&quot;</span><span class="p">)</span>
+
+    <span class="c1"># `FocalPlaneXResolution` and `FocalPlaneYresolution` must be greater than 0</span>
+    <span class="k">if</span> <span class="n">resolution</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ZeroDivisionError</span><span class="p">(</span><span class="s2">&quot;FocalPlaneXResolution must be greater than 0&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">resolution</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ZeroDivisionError</span><span class="p">(</span><span class="s2">&quot;FocalPlaneYResolution must be greater than 0&quot;</span><span class="p">)</span>
+
+    <span class="n">sensor_size</span> <span class="o">=</span> <span class="p">(</span><span class="n">image_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">/</span> <span class="n">resolution</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mf">25.4</span><span class="p">,</span>
+                   <span class="n">image_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">/</span> <span class="n">resolution</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="mf">25.4</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">sensor_size</span></div>
+
+
+<div class="viewcode-block" id="sensor_size_crop_factor"><a class="viewcode-back" href="../../transformation.html#ct_assist.transform.sensor_size_crop_factor">[docs]</a><span class="k">def</span> <span class="nf">sensor_size_crop_factor</span><span class="p">(</span><span class="n">effective_f</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">actual_f</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;Estimates sensor size based on effective and actual focal length, comparing to a standard 35 mm film camera.</span>
+
+<span class="sd">    :param effective_f: Effective focal length</span>
+<span class="sd">    :type effective_f: float</span>
+<span class="sd">    :param actual_f: Actual focal length</span>
+<span class="sd">    :type actual_f: float</span>
+<span class="sd">    :return: Sensor size</span>
+<span class="sd">    :rtype: Tuple[float, float]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">effective_f</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ZeroDivisionError</span><span class="p">(</span><span class="s2">&quot;Effective focal length may not be 0&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">actual_f</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ZeroDivisionError</span><span class="p">(</span><span class="s2">&quot;Actual focal length may not be 0&quot;</span><span class="p">)</span>
+    <span class="n">crop_factor</span> <span class="o">=</span> <span class="n">effective_f</span> <span class="o">/</span> <span class="n">actual_f</span>
+    <span class="n">sensor_size</span> <span class="o">=</span> <span class="p">(</span><span class="mi">36</span> <span class="o">/</span> <span class="n">crop_factor</span><span class="p">,</span> <span class="mi">24</span> <span class="o">/</span> <span class="n">crop_factor</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">sensor_size</span></div>
+
+
+<div class="viewcode-block" id="sensor_size_look_up"><a class="viewcode-back" href="../../transformation.html#ct_assist.transform.sensor_size_look_up">[docs]</a><span class="k">def</span> <span class="nf">sensor_size_look_up</span><span class="p">(</span><span class="n">model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Looks up the sensor size of the photographic device with name `model_name`.</span>
+
+<span class="sd">    :param model_name: Model name</span>
+<span class="sd">    :type model_name: str</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># TODO: Add 4g-bodycam</span>
+    <span class="n">table</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;iPhone SE&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">4.8</span><span class="p">,</span> <span class="mf">3.6</span><span class="p">),</span>
+        <span class="s2">&quot;iPhone 11&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">5.76</span><span class="p">,</span> <span class="mf">4.29</span><span class="p">),</span>  <span class="c1"># Approx</span>
+        <span class="s2">&quot;iPhone 8 Plus&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">4.8</span><span class="p">,</span> <span class="mf">3.5</span><span class="p">),</span>
+        <span class="s2">&quot;SamsungSM-A202F&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">6.40</span><span class="p">,</span> <span class="mf">4.80</span><span class="p">),</span>  <span class="c1"># Approx</span>
+        <span class="s2">&quot;SM-A515F&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mf">6.16</span><span class="p">,</span> <span class="mf">4.55</span><span class="p">)</span>  <span class="c1"># Approx</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">table</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">model_name</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+           
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2020, Casper Smet
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script>
+
+  
+  
+    
+   
+
+</body>
+</html>
